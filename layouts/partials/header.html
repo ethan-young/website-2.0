@@ -1,0 +1,70 @@
+<div class = "uk-visible@s">
+    <nav class="uk-dark uk-background-default"  uk-navbar>
+      <div class="uk-navbar-left">
+        <a href="/" class="uk-navbar-item uk-logo"><span class="uk-icon uk-margin-small-right uk-button-text">{{.Site.Title}}</a> 
+      </div>
+      <div class = "uk-navbar-center">
+        <ul class = "uk-navbar-nav">
+         {{ $currentPage := . }}
+         {{ range .Site.Menus.main }}
+         <li>
+           <a href="{{ .URL }}">
+             <span class = "uk-button-text uk-padding-remove-horizontal">{{ .Name }}</span>
+           </a>
+           {{ if .HasChildren }}
+           <div  class="uk-drop" uk-drop="pos: bottom-left; offset: 0;">
+             <ul class ="uk-navbar-nav">
+           {{ range .Children }}
+              <li>
+                <a href="{{ .URL }}" >
+                 <span class = "uk-button-text uk-padding-remove-horizontal">{{ .Name }}</span>
+                </a>
+              </li>
+           {{ end }}
+             </ul>
+           </div>
+           {{ end }}
+          </li>
+         {{ end }}
+        </ul>
+      </div>
+      <div class = "uk-navbar-right uk-margin-small-right">
+        <div class = "uk-visible@l">
+            <a class="uk-navbar-toggle" uk-search-icon href="#"><span class = "uk-button-text"></span></a>
+            <div id = "search-by-container" class="uk-drop" uk-drop="pos: left-center; offset: 0; delay-hide: 100;">
+                <form  class="uk-search uk-search-navbar uk-width-1-1">
+                    <input id = "search-by" class="uk-search-input uk-width-expand search" type="search" placeholder="Search..." autofocus>
+                </form>
+            </div>
+        </div>
+      </div>
+    </nav>
+  <hr class = 'uk-margin-remove'>
+</div>
+<div class="uk-position-relative uk-hidden@s">
+  <nav class="uk-dark" uk-navbar="dropbar: true; dropbar-mode: push; mode: click;">
+    <div class="uk-navbar-left">
+      <ul class="uk-navbar-nav">
+        <li>
+          <a href="#" uk-navbar-toggle-icon></a>
+          <div class="uk-navbar-dropdown">
+            <ul class="uk-nav uk-navbar-dropdown-nav">
+              <li>
+                 <a href="/"><span class="uk-button-text uk-padding-remove-horizontal">Home</a> 
+              </li>
+              {{ $currentPage := . }}
+              {{ range .Site.Menus.main }}
+              <li>
+                <a href="{{ .URL }}">
+                  <span class = "uk-button-text uk-padding-remove-horizontal">{{ .Name }}</span>
+                </a>
+              </li>
+              {{ end }}
+            </ul>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  <div class="uk-navbar-dropbar"></div>
+</div>

@@ -1,0 +1,41 @@
+{{ define "title"}} {{ .Site.Title}} {{end}}
+{{ define "header"}} {{ partial "header" .}} {{end}}
+{{ define "main"}}
+
+<style>
+  #article-top h2:after {
+    position: absolute;
+    content: '';
+    width: 40px;
+    height: 3px;
+    top: 0;
+    left: 50%;
+    margin-left: -20px;
+    background: #f0506e;
+  }
+  
+</style>
+
+<div>
+  <div id = "article-top" class = 'uk-margin-bottom uk-position-relative'>
+    <h1 class = 'uk-heading-medium uk-padding uk-text-center uk-position-relative'>{{ .Params.title }}</h1>
+    <h2 class = "uk-h2 uk-text-bold uk-text-center uk-position-relative uk-padding uk-padding-remove-bottom uk-margin-remove-top">{{ .Site.Params.author }}, {{ .Site.Params.degree }}</h2>
+    <div class = "uk-text-center uk-padding uk-padding-remove-top">
+      <p class = "uk-article-meta">{{ .Site.Params.job}} at {{ .Site.Params.university }}<br>{{ .Site.Params.city}}, {{ .Site.Params.country }}</p>
+      <a href="mailto:{{ .Site.Params.email }}"><i class="far fa-envelope fa-2x"></i></a>
+      <a target = "_blank" href = {{ .Site.Params.google_scholar }}><i class="ai ai-google-scholar ai-2x"></i></a>
+      <a target = "_blank" href = {{ .Site.Params.osf }}><i class="ai ai-osf ai-2x success"></i></a>
+      <a target = "_blank" href = {{ .Site.Params.research_gate }}><i class="ai ai-researchgate ai-2x success"></i></a>
+      <a target = "_blank" href = {{ .Site.Params.github }}><i class="fab fa-github fa-2x success"></i></a>
+      <p class = "uk-article-meta uk-text-small"><a target = "_blank" href = '/cv-pdf/cv-pdf.pdf'>[PDF version]</a></p>
+    </div>
+  </div>
+  <article id = "my-content" class = 'uk-container uk-container-xsmall uk-position-relative uk-padding-large uk-padding-remove-top'>
+  {{ partial "toc" . }}
+  {{.Content}}
+  </article>
+</div>
+
+{{ end }}
+
+{{ define "footer"}} {{ partial "footer" .}} {{end}}

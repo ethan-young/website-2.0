@@ -1,0 +1,93 @@
+---
+title: "Resources"
+description:  "A list of resources I have found valuable."
+draft: false
+tocbot: true
+---
+
+### Learning R
+
+There is so much to learn in R. There are many skills you can learn using R including data transformation and manipulation techniques, plotting, statistics (obviously), reporting, reproducibility, and many other topics. In my opinion, although the statistical packages in R are many and highly useful and effective, the point of learning R should not just be to learn/use statistics alone. Instead, you should learn R in order to learn how to program and to intimately understand how to work with data. My experience is that 80-90% of data analysis is simply preparing data for analysis (cleaning, transforming, restructuring, exploring etc.). But actually performing your analysis is relatively straightfoward. Programming makes all the steps that come before your analysis much easier and much more systematic.
+
+To learn more about how to program in R, I recommend taking a look at the resources below:
+
+```{r, echo=F,message=F,warning=F}
+library(tidyverse)
+library(knitr)
+
+kable(
+  tribble(
+    ~Resource,  ~Description,
+    "[DataCamp](www.datacamp.com)", "Website with many R courses complete with video tuturials and interactive exercises.",
+    "[DataCamp Community](www.datacamp.com/community/)", "A section of DataCamp that is free and community driven.",
+    "[From Rstudio](https://www.rstudio.com/online-learning/)", "Rstudio's list of online learning resources for R and other things.",
+    "[R for Data Science](http://r4ds.had.co.nz/index.html)", "A great book learning how to use R for data analysis and programming",
+    "[Advanced R](http://adv-r.had.co.nz/)", "Another book by Hadley Wickham with many advanced programming topics for R.",
+  ),
+  format = "html",
+  table.attr = "class=\"uk-table uk-table-small uk-table-divider\""
+)
+```
+
+### R markdown
+
+R markdown is a highly useful tool for writing reproducible reports, manuscripts,, presentations, books, and websites/web applications. Its power lies in how it is able to knit together code and text to create documents. You create an R markdown file that contains code that does important stuff and can be reproducibly executed and R markdonw converts it into different formats. If you need to change your analysis, you can do so quickly in our R markdown file and any statistic, plot, or table that tied to your data will automatically update each time your compile your R markdown file.
+
+Here are some useful resources for R markdown:
+
+```{r, echo=F,message=F,warning=F}
+kable(
+  tribble(
+    ~Resource,  ~Description,
+    "[R Markdown](http://rmarkdown.rstudio.com/)", "The official R markdown website.",
+    "[R Markdown: The Definitive Guide](https://bookdown.org/yihui/rmarkdown/)","Official book for all things R markdown.",
+    "[knitr](https://yihui.name/knitr/)", "The official website for knitr, which basically powers R markdown.",
+    "[Flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/index.html)", "Documentation on how to make dashboards in R markdown.",
+    "[bookdown](https://bookdown.org/)", "Official bookdown site.",
+    "[bookdown: authoring books with bookdown](https://bookdown.org/yihui/bookdown/)","Documentation for how to write books with the bookdown package.",
+    "[blogdown](https://bookdown.org/yihui/blogdown/)", "Documentation for how to create websites in R markdown.",
+    "[pkgdown](https://pkgdown.r-lib.org/)","Documentation for how to create websites for an R pacakge.",
+    "[htmlWidgets](http://www.htmlwidgets.org/index.html)","Learn how to make htmlWidgets for R markdown reports.",
+    "[R Pubs](https://rpubs.com/)","Free website that allows you to publish R markdown reports to the internet."
+  ),
+  format = "html",
+  table.attr = "class=\"uk-table uk-table-small uk-table-divider\""
+)
+```
+
+### Tidyverse
+
+```{r, echo=F,message=F,warning=F}
+kable(
+  tribble(
+    ~Resource,  ~Description,
+    "[tidyverse](https://www.tidyverse.org/)", "The official tidyverse website.",
+    "[ggplot2](https://ggplot2.tidyverse.org/)", "Awesome visualizations.",
+    "[dplyr](https://dplyr.tidyverse.org/)", "Tools for data manipulation",
+    "[tidyr](https://tidyr.tidyverse.org/)", "Tools to make your data tidy e.g. columns are variables, rows are observations, cells are values.",
+    "[readr](https://readr.tidyverse.org/)", "Reading rectangular data.",
+    "[haven](https://haven.tidyverse.org/)", "Read data from SPSS, SAS, or Stata into R",
+    "[purrr](https://purrr.tidyverse.org/)", "Enhancing functional programming (e.g. write better for loops).",
+    "[tibble](https://tibble.tidyverse.org/)", "Revamped data.frame package",
+    "[stringr](https://stringr.tidyverse.org/)", "Helpful package for working with strings."
+  ),
+  format = "html",
+  table.attr = "class=\"uk-table uk-table-small uk-table-divider\""
+)
+```
+
+### Shiny
+
+```{r, echo=F,message=F,warning=F}
+kable(
+  tribble(
+    ~Resource,  ~Description,
+    "[shiny](https://shiny.rstudio.com/)", "The official shiny website.",
+    "[shinyapps](https://www.shinyapps.io/)", "A free place to publish shiny apps to the web.",
+    "[shinydashboard](https://rstudio.github.io/shinydashboard/)", "Build dashboards in shiny.",
+    "[shinyjs](https://deanattali.com/shinyjs/)", "A useful package for extending the shiny framework."
+  ),
+  format = "html",
+  table.attr = "class=\"uk-table uk-table-small uk-table-divider\""
+)
+```

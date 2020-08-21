@@ -1,0 +1,491 @@
+---
+output: 
+  pdf_document:
+    latex_engine: xelatex
+mainfont: Lato
+header-includes:
+- \usepackage{array}
+- \usepackage{enumitem}
+- \usepackage{longtable}
+- \usepackage{graphicx}
+- \usepackage{fontspec}
+- \usepackage{fontawesome}
+- \usepackage{tabularx}
+- \usepackage{fullpage,graphicx,tikz}
+- \usepackage{tikzpagenodes}
+- \usepackage{fancyhdr}
+- \usepackage{xcolor}
+- \usepackage{hyperref}
+---
+\definecolor{downloadcolor}{RGB}{30, 135, 240}
+\definecolor{mygray}{RGB}{153, 153, 153}
+\usetikzlibrary{calc}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lfoot{\textcolor{mygray}{\textit{`r format(Sys.time(), '%B, %Y')`}}}
+\cfoot{\textcolor{mygray}{\textit{Ethan S. Young $\cdot$ Curriculum Vitae}}}
+\rfoot{\textcolor{mygray}{\textit{\thepage}}}
+\renewcommand{\headrulewidth}{0pt}
+
+\begin{center}
+  \Huge{\textbf{\textit{Ethan S. Young}}} \\
+\end{center}
+
+\vspace{2ex}
+
+\begin{minipage}{5cm}
+  \begin{center}
+    Postdoctoral Researcher \\
+    Department of Pyschology, Utrecht University \\
+    Utrecht, The Netherlands \\
+  \end{center}
+\end{minipage}
+\hfill
+\begin{minipage}{5cm}
+  \begin{tikzpicture}[baseline=(ola.center),inner sep=0pt]
+    \clip (0,0)  circle (2.25cm) node (ola) {\includegraphics[width=4.5cm]{pic.jpeg}};
+  \end{tikzpicture}
+\end{minipage}
+\hfill
+\begin{minipage}{5cm}
+  \faPhone{} +31 6 82583068  \\
+  \faEnvelope{} \href{mailto:young.ethan.scott@gmail.com}{young.ethan.scott@gmail.com}\\
+  \faHome{} \href{www.ethan-young.com}{ethan-young.com} \\
+  \faGithub{} \href{https://github.com/ethan-young}{github}\\
+\end{minipage}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, warning = F, message = F)
+library(vitae)
+library(tidyverse)
+library(glue)
+library(googledrive)
+library(googlesheets4)
+```
+
+```{r, include=F}
+gs4_auth("young.ethan.scott@gmail.com")
+cv_data_url <- "https://docs.google.com/spreadsheets/d/1EXR666AmWCTuTrifL-BtlwS4BgPs-n3NE0OQkhnAoHc/edit#gid=0"
+pubs <- read_sheet(cv_data_url, sheet = 1, col_types = c("c") ) %>% 
+  mutate(citation = str_replace(citation,"Young, E. S.","\\\\textbf{Young, E. S.}"))
+positions <- read_sheet(cv_data_url, sheet = 2)
+education <- read_sheet(cv_data_url, sheet = 3)
+awards    <- read_sheet(cv_data_url, sheet = 4)
+teaching  <- read_sheet(cv_data_url, sheet = 5)
+```
+
+\vspace{1ex}
+
+# **Education**
+
+\vspace{1ex}
+\begin{color}{mygray}\hrule\end{color}
+\vspace{1ex}
+
+```{r, results='asis'}
+cat(
+  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  education %>% 
+    arrange(desc(end)) %>% 
+    mutate_all(~str_replace_all(.,"&","\\\\&")) %>%
+    mutate(last_row = ifelse(row_number()!= max(row_number()), "\\\\& \\\\","")) %>% 
+    glue_data(
+      .open = "<",.close = ">",.na = "",
+      "<end> & \\parbox[t]{5.0in}{<degree> \\newline <institution> \\newline <subject>} \\\\",
+      "<last_row>"
+    ),
+  "\\end{longtable}",
+  sep = "\n"
+)
+```
+
+\vspace{1ex}
+
+# **Academic Positions**
+
+\vspace{1ex}
+\begin{color}{mygray}\hrule\end{color}
+\vspace{1ex}
+
+```{r, results='asis'}
+cat(
+  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  positions %>% 
+    mutate_all(~str_replace_all(.,"&","\\\\&")) %>% 
+    mutate(last_row = ifelse(row_number()!= max(row_number()), "\\\\& \\\\","")) %>% 
+    glue_data(
+      .open = "<",.close = ">",.na = "-",
+      "<start>-<end> & \\parbox[t]{5.0in}{<position> \\newline <institution> \\newline advisors: <people>} \\\\",
+      "<last_row>"
+    ),
+  "\\end{longtable}",
+  sep = "\n"
+)
+```
+
+\vspace{1ex}
+
+# **Honors & Awards**
+
+\vspace{1ex}
+\begin{color}{mygray}\hrule\end{color}
+\vspace{1ex}
+
+## *Awards*
+
+```{r, results='asis'}
+cat(
+  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  awards %>% 
+    filter(type == "award") %>% 
+    mutate_all(~str_replace_all(.,"&","\\\\&")) %>%
+    mutate(last_row = ifelse(row_number()!= max(row_number()), "\\\\& \\\\","")) %>% 
+    glue_data(
+      .open = "<",.close = ">",.na = "",
+      "<ifelse(!is.na(start),paste0(start,'-'),start)><end> & \\parbox[t]{5.0in}{<award> \\newline <title> \\newline \\textit{<institution>}} \\\\",
+      "<last_row>"
+    ),
+  "\\end{longtable}",
+  sep = "\n"
+)
+```
+
+## *Fellowships*
+
+```{r, results='asis'}
+cat(
+  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  awards %>% 
+    filter(type == "fellowship") %>% 
+    mutate_all(~str_replace_all(.,"&","\\\\&")) %>%
+    mutate(last_row = ifelse(row_number()!= max(row_number()), "\\\\& \\\\","")) %>% 
+    glue_data(
+      .open = "<",.close = ">",.na = "",
+      "<ifelse(!is.na(start),paste0(start,'-'),start)><end> & \\parbox[t]{5.0in}{<award> \\newline <institution>} \\\\",
+      "<last_row>"
+    ),
+  "\\end{longtable}",
+  sep = "\n"
+)
+```
+
+\vspace{1ex}
+
+# **Publications**
+
+\vspace{1ex}
+\begin{color}{mygray}\hrule\end{color}
+\vspace{1ex}
+
+
+## *Peer-Reviewed Papers*
+
+```{r, results='asis'}
+journals <- c("Journal of Personality and Social Psychology",
+              "Self and Identity",
+              "Psychological Science",
+              "Evolutionary Behavioral Sciences",
+              "Developmental Psychology",
+              "Attachment and Human Development",
+              "Development and Psychopathology",
+              "Evolution and Human Behavior",
+              "Trends in Cognitive Sciences")
+
+walk(journals, function(x){
+  pubs <<- pubs %>% 
+    mutate(citation = ifelse(str_detect(citation,x), str_replace(citation,x,paste0("\\\\textit{",x,"}")),citation))
+})
+
+articles <- pubs %>% 
+  filter(pub_type=="journal", year != 'under-review') %>% 
+  arrange(desc(year)) %>% 
+  mutate(count = 1:n()) %>% 
+  group_by(year) %>%
+  mutate(count_year = 1:n(),
+         count_auth = ifelse(str_detect(citation,"^\\\\textbf\\{Young, E. S."), count*-1, count_year),
+         border     = ifelse(count_year == max(count_auth) | n()==1,"solid","none"),
+         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
+  arrange(desc(year),count_auth) %>% 
+  ungroup() %>% 
+  mutate(
+    border   = ifelse(count == last(count),"",border),
+    download = ifelse(is.na(download),"", 
+                      paste0("\\href{https://www.ethan-young.com/publications/",download,"}{\\textcolor{downloadcolor}{\\faFilePdfO{} View}}")),
+  ) %>% 
+  select(year_group,citation,download)
+
+cat(
+  "\\noindent \\begin{longtable}{p{2.25cm}p{5.5in}}",
+  articles %>%
+    mutate(number = 1:n(),
+           hline      = ifelse(lead(year_group)!="" & number<max(number),"\\hline  ",""),
+           year_cell  = ifelse(!is.na(year_group), paste0("\\textbf{",year_group,"}"), " "),
+           citation   = str_replace_all(citation,"&","\\\\&"),
+           multi_year = ifelse(!is.na(year_cell),glue(.open = "<",.close = ">","\\multicolumn{1}{r|}{<year_cell>}"),"\\multicolumn{1}{r|}{}"),
+           multi      = ifelse(lead(year_group)!=""," ", "\\multicolumn{3}{}{\\vspace{2 mm}}"),
+           last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>% 
+    glue_data(
+      .open = "<",.close = ">",.na = "",
+      "<year_group> & \\hangindent=0.25cm <citation> \\newline <download> \\\\ ",
+      "<last_row>"
+    ),
+  "\\end{longtable}",
+  sep = "\n"
+)
+```
+
+## *Book Chapters*
+
+```{r, results='asis'}
+chapters <- pubs %>% 
+  filter(pub_type=="chapter") %>% 
+  arrange(desc(year)) %>% 
+  mutate(count = 1:n()) %>% 
+  group_by(year) %>%
+  mutate(count_year = 1:n(),
+         count_auth = ifelse(str_detect(citation,"^\\\\textbf\\{Young, E. S."), count*-1, count_year),
+         border     = ifelse(count_year == max(count_auth) | n()==1,"solid","none"),
+         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
+  arrange(desc(year),count_auth) %>% 
+  ungroup() %>% 
+  mutate(
+    border   = ifelse(count == last(count),"",border),
+    download = ifelse(is.na(download),"", 
+                      paste0("\\href{https://www.ethan-young.com/cv/",download,"}{\\textcolor{downloadcolor}{\\faFilePdfO{} View}}")),
+  ) %>% 
+  select(year_group,citation,download)
+
+cat(
+  "\\noindent \\begin{longtable}{p{2.25cm}p{5.5in}}",
+  chapters %>%
+    mutate(number = 1:n(),
+           hline      = ifelse(lead(year_group)!="" & number<max(number),"\\hline  ",""),
+           year_cell  = ifelse(!is.na(year_group), paste0("\\textbf{",year_group,"}"), " "),
+           citation   = str_replace_all(citation,"&","\\\\&"),
+           multi_year = ifelse(!is.na(year_cell),glue(.open = "<",.close = ">","\\multicolumn{1}{r|}{<year_cell>}"),"\\multicolumn{1}{r|}{}"),
+           multi      = ifelse(lead(year_group)!=""," ", "\\multicolumn{3}{}{\\vspace{2 mm}}"),
+           last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>%
+    glue_data(
+      .open = "<",.close = ">",.na = "",
+      "<year_group> & \\hangindent=0.25cm <citation> \\newline <download> \\\\ ",
+      "<last_row>"
+    ),
+  "\\end{longtable}",
+  sep = "\n"
+)
+```
+
+## *In Progress*
+
+```{r, results='asis'}
+in_progress <- pubs %>% 
+  filter(in_progress == 1) %>% 
+  mutate(count = 1:n()) %>% 
+  group_by(pub_type) %>%
+  mutate(count_year = 1:n(),
+         count_auth = ifelse(str_detect(citation,"^\\\\textbf\\{Young, E. S."), count*-1, count_year),
+         pub_group = ifelse(count_auth == min(count_auth),pub_type,"") %>% str_replace("-"," ")) %>% 
+  arrange(pub_type,count_auth) %>% 
+  ungroup() %>% 
+  select(year,pub_group,citation)
+
+cat(
+  "\\noindent \\begin{longtable}{p{2.25cm}p{5.5in}}",
+  in_progress %>%
+    mutate(number = 1:n(),
+           citation   = str_replace_all(citation,"&","\\\\&"),
+           last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>%
+    glue_data(
+      .open = "<",.close = ">",.na = "",
+      "<str_replace(year,'-',' ')> & \\hangindent=0.25cm <citation> \\\\ ",
+      "<last_row>"
+    ),
+  "\\end{longtable}",
+  sep = "\n"
+)
+```
+
+\vspace{1ex}
+
+# **Presentations**
+
+\vspace{1ex}
+\begin{color}{mygray}\hrule\end{color}
+\vspace{1ex}
+
+## *Talks (first author only)*
+
+```{r, results='asis'}
+presentations <- pubs %>% 
+  filter(pub_type=="conference", pub_sub_type == "talk") %>% 
+  arrange(desc(year)) %>% 
+  mutate(count = 1:n()) %>% 
+  group_by(year) %>%
+  mutate(count_year = 1:n(),
+         count_auth = ifelse(str_detect(citation,"^\\\\textbf\\{Young, E. S."), count*-1, count_year),
+         border     = ifelse(count_year == max(count_auth) | n()==1,"solid","none"),
+         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
+  arrange(desc(year),count_auth) %>% 
+  ungroup() %>% 
+  mutate(
+    border   = ifelse(count == last(count),"",border),
+    download = ifelse(is.na(download),"", 
+                      paste0("\\href{https://www.ethan-young.com/cv/",download,"}{\\textcolor{downloadcolor}{\\faFilePdfO{} View}}")),
+  ) %>% 
+  select(year_group,citation,download)
+
+cat(
+  "\\noindent \\begin{longtable}{p{2.25cm}p{5.5in}}",
+  presentations %>%
+    mutate(number = 1:n(),
+           hline      = ifelse(lead(year_group)!="" & number<max(number),"\\hline  ",""),
+           year_cell  = ifelse(!is.na(year_group), paste0("\\textbf{",year_group,"}"), " "),
+           citation   = str_replace_all(citation,"&","\\\\&"),
+           multi_year = ifelse(!is.na(year_cell),glue(.open = "<",.close = ">","\\multicolumn{1}{r|}{<year_cell>}"),"\\multicolumn{1}{r|}{}"),
+           multi      = ifelse(lead(year_group)!=""," ", "\\multicolumn{3}{}{\\vspace{2 mm}}"),
+           last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>% 
+    glue_data(
+      .open = "<",.close = ">",.na = "",
+      "<year_group> & \\hangindent=0.25cm <citation> \\newline <download> \\\\ ",
+      "<last_row>"
+    ),
+  "\\end{longtable}",
+  sep = "\n"
+)
+
+```
+
+## *Posters (first author only)*
+
+```{r, results='asis'}
+posters <- pubs %>% 
+  filter(pub_type=="conference", pub_sub_type == "poster") %>% 
+  arrange(desc(year)) %>% 
+  mutate(count = 1:n()) %>% 
+  group_by(year) %>%
+  mutate(count_year = 1:n(),
+         count_auth = ifelse(str_detect(citation,"^\\\\textbf\\{Young, E. S."), count*-1, count_year),
+         border     = ifelse(count_year == max(count_auth) | n()==1,"solid","none"),
+         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
+  arrange(desc(year),count_auth) %>% 
+  ungroup() %>% 
+  mutate(
+    border   = ifelse(count == last(count),"",border),
+    download = ifelse(is.na(download),"", 
+                      paste0("\\href{https://www.ethan-young.com/cv/",download,"}{\\textcolor{downloadcolor}{\\faFilePdfO{} View}}")),
+  ) %>% 
+  select(year_group,citation,download)
+
+cat(
+  "\\noindent \\begin{longtable}{p{2.25cm}p{5.5in}}",
+  posters %>%
+    mutate(number = 1:n(),
+           hline      = ifelse(lead(year_group)!="" & number<max(number),"\\hline  ",""),
+           year_cell  = ifelse(!is.na(year_group), paste0("\\textbf{",year_group,"}"), " "),
+           citation   = str_replace_all(citation,"&","\\\\&"),
+           multi_year = ifelse(!is.na(year_cell),glue(.open = "<",.close = ">","\\multicolumn{1}{r|}{<year_cell>}"),"\\multicolumn{1}{r|}{}"),
+           multi      = ifelse(lead(year_group)!=""," ", "\\multicolumn{3}{}{\\vspace{2 mm}}"),
+           last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>% 
+    glue_data(
+      .open = "<",.close = ">",.na = "",
+      " <year_group> &\\hangindent=0.25cm <citation> \\newline <download> \\\\ ",
+      "<last_row>"
+    ),
+  "\\end{longtable}",
+  sep = "\n"
+)
+
+```
+
+\vspace{1ex}
+
+# **Teaching & Mentoring**
+
+\vspace{1ex}
+\begin{color}{mygray}\hrule\end{color}
+\vspace{1ex}
+
+## *Instructor*
+
+```{r, results='asis'}
+cat(
+  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  teaching %>% 
+    filter(position == "Instructor") %>% 
+    mutate_all(~str_replace_all(.,"&","\\\\&")) %>% 
+    mutate(last_row = ifelse(row_number()!= max(row_number()), "\\\\& \\\\","")) %>% 
+    glue_data(
+      .open = "<",.close = ">",.na = "-",
+      " <semester> <year> & <title> (<course>) \\newline <institution> \\\\",
+      "<last_row>"
+    ),
+  "\\end{longtable}",
+  sep = "\n"
+)
+```
+
+
+## *Section Leader*
+
+```{r, results='asis'}
+cat(
+  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  teaching %>% 
+    filter(position == "Section Leader") %>% 
+    mutate_all(~str_replace_all(.,"&","\\\\&")) %>% 
+    mutate(last_row = ifelse(row_number()!= max(row_number()), "\\\\& \\\\","")) %>% 
+    glue_data(
+      .open = "<",.close = ">",.na = "-",
+      " <semester> <year> & <title> (<course>) \\newline <institution> \\\\",
+      "<last_row>"
+    ),
+  "\\end{longtable}",
+  sep = "\n"
+)
+```
+
+
+## *Teaching Assistant*
+
+```{r, results='asis'}
+cat(
+  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  teaching %>% 
+    filter(position == "Teaching Assistant") %>% 
+    mutate_all(~str_replace_all(.,"&","\\\\&")) %>% 
+    mutate(last_row = ifelse(row_number()!= max(row_number()), "\\\\& \\\\","")) %>% 
+    glue_data(
+      .open = "<",.close = ">",.na = "-",
+      " <semester> <year> & <title> (<course>) \\newline <institution> \\\\",
+      "<last_row>"
+    ),
+  "\\end{longtable}",
+  sep = "\n"
+)
+```
+
+\vspace{1ex}
+
+# **Ad Hoc Reviewing**
+
+\vspace{1ex}
+\begin{color}{mygray}\hrule\end{color}
+\vspace{1ex}
+
+- *Child Development*
+- *Evolution and Human Behavior*
+- *Evolutionary Psychology*
+- *Personality and Social Psychology Bulletin*
+- *Journal of Child Psychology and Psychiatry*
+
+\vspace{1ex}
+
+# **Professional Memberships**
+
+\vspace{1ex}
+\begin{color}{mygray}\hrule\end{color}
+\vspace{1ex}
+
+- Society for Personality and Social Psychology (SPSP)
+- Human Behavior and Evolution Society (HBES)

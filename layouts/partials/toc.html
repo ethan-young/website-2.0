@@ -1,0 +1,95 @@
+
+{{ if .Params.tocbot }} 
+
+<style>
+  .tm-sidebar-right {
+      position: absolute;
+      top: 0;
+      left: calc(100% + 0px);
+      width: 200px;
+  }
+  
+  media (min-width: 1200px)
+  .tm-sidebar-right {
+      left: calc(100% + 0px);
+  }
+  
+  .tm-sidebar-left {
+      position: absolute;
+      top: 0;
+      right: calc(100% - 25px);
+      width: 200px;
+  }
+  
+  .tm-nav>li.uk-active>a {
+      position: relative
+  }
+  
+  .tm-nav>li.uk-active>a:before {
+      content: "";
+      position: absolute;
+      top: 15px;
+      left: -25px;
+      width: 15px;
+      border-top: 1px solid #f0506e;
+  }
+  
+    h3 > a:after {
+       content: '# ';
+       font-size: 20px;
+       font-weight: normal;
+       line-height: 1;
+       color: #e5e5e5;
+       margin-left: 8px;
+       position: relative;
+       top: -1px;
+    }
+    
+    h3 > a {
+      text-decoration: none;
+      text-align: center;
+      color: #333333;
+    }
+    
+    h3 > a:hover{
+      text-decoration: none;
+      color: #f0506e;
+    }
+    
+    h3:hover{
+      text-decoration: none;
+      color: #f0506e;
+    }
+
+</style>
+
+<div class="tm-sidebar-left uk-visible@l">
+  <div id = "js-toc" uk-sticky="offset: 50; top: 0;" class = "uk-sticky uk-active uk-sticky-fixed uk-sticky-below" style="width: 200px;">
+    <ul id = 'ui-toc' class = "uk-nav uk-nav-default uk-nav-parent-icon tm-nav uk-padding-top" uk-scrollspy-nav = "closest: li; scroll: true; offset: 10;">
+
+    </ul>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function(){
+    var item_index = 0;
+    $("#ui-toc").append("<li class='uk-nav-header'>Contents</li>");
+    $("article h3").each(function(){
+      var content  = $(this).html()
+      var trimmed_name = content.replace(/\./g,"").replace(/&/g,"").replace(/amp;./g,"").replace(/\d/,"").replace(/ /g,"-");
+      $(this).attr("id", trimmed_name)
+      $(this).addClass('uk-text-bold')
+      $(this).html("<a>" + content + "</a>")
+      $(this).children().attr("href", "#" + trimmed_name)
+      $("#ui-toc").append("<li>" + "<a href = #" + trimmed_name + ">" + content + "</li>")
+      console.log(trimmed_name)
+      item_index += 1;
+    });
+    
+    $("article h4").addClass("uk-text-bold");
+    $("article h5").addClass("uk-text-bold uk-text-italic");
+  });
+</script>
+
+{{ end }}

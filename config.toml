@@ -1,0 +1,51 @@
+baseURL = "/"
+languageCode = "en-us"
+title = "ESY"
+
+[Params]
+  RSSLink = "/index.xml"
+  author = "Ethan S. Young" # add your company name
+  github = "https://github.com/ethan-young" # add your github profile name
+  email = "young.ethan.scott@gmail.com"
+  google_scholar = "https://scholar.google.com/citations?user=5DWz3JsAAAAJ&hl=en&authuser=1"
+  osf = "https://osf.io/vr5yx"
+  research_gate = "https://www.researchgate.net/profile/Ethan_Young3"
+  university = "Utrecht University"
+  city = "Utrecht"
+  country = "The Netherlands"
+  job = "Postdoctoral Researcher"
+  degree = "Ph.D."
+
+[[menu.main]]
+    name = "Publications"
+    weight = 10
+    url = "/publications/"
+[[menu.main]]
+    name = "Posts"
+    weight = 20
+    url = "/posts/"
+[[menu.main]]
+    name = "Resources"
+    weight = 30
+    url = "/resources/"
+[[menu.main]]
+    name = "CV"
+    weight = 40
+    url = "/cv/"
+[[menu.main]]
+    name = "About"
+    weight = 50
+    url = "/about/"
+
+#[[menu.main]]
+#    name = "Archive"
+#    weight = 50
+#    url = "/Archive/"
+
+[taxonomies]
+  tag = "tags"
+
+[outputs]
+  home = [ "HTML", "RSS", "JSON"]
+
+ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$", "^cv-pdf\\.Rmd$"]

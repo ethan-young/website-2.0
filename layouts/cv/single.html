@@ -1,0 +1,36 @@
+{{ define "title" }}
+  <!-- This will override the default value set in baseof.html; i.e., "{{.Site.Title}}" in the original example-->
+  {{ .Title }} &ndash; {{ .Site.Title }}
+{{ end }}
+{{ define "main" }}
+<div class = "uk-container uk-container-small uk-padding">
+  <article class="uk-article">
+    <ul class="uk-breadcrumb">
+      <li><a href="/publications/">Publications</a></li>
+      <li><span>{{print (title .Params.pub_type) " Articles" }}</span></li>
+      <li><span>{{.Params.intext}}</span></li>
+    </ul>
+    <h1 class="uk-article-title">{{ .Title }}</h1>
+    <p class="uk-article-lead"> {{ .Params.authors }}</p>
+    <div class = "uk-inline uk-width-1-1">
+      <ul class = 'uk-margin-auto uk-width-1-1' uk-tab>
+        <li><a href='#'>Abstract</a></li>
+        <li><a href='#'>Paper</a></li>
+      </ul>
+      <ul class='uk-switcher uk-padding uk-padding-remove-vertical uk-width-1-1@m'>
+        <li>
+          <p>{{ .Params.abstract }}</p>
+        </li>
+        <li>
+          <iframe class = "uk-width-1-1" src="{{ .Params.iframe }}" uk-height-viewport></iframe>
+        </li>
+      </ul>
+      <ul class="uk-pagination">
+        <li class = 'uk-position-center-left-out'><a href="{{ .Params.prev_pg }}"><span class="uk-margin-small-right" uk-pagination-previous></span> Previous</a></li>
+        <li class = 'uk-position-center-right-out'><a href="{{ .Params.next_pg }}">Next <span class="uk-margin-small-left" uk-pagination-next></span></a></li>
+      </ul>
+    </div>
+  {{ .Content }}
+  </article>
+</div>
+{{ end }}

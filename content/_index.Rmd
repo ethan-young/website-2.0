@@ -1,0 +1,119 @@
+---
+title: ESY
+---
+```{r echo=F, message=F, warning=F}
+library(tidyverse)
+library(glue)
+library(htmltools)
+library(googlesheets4)
+```
+
+```{r echo=F, message=F, warning=F, results='asis'}
+gs4_auth("young.ethan.scott@gmail.com")
+pubs <- 
+  range_read("https://docs.google.com/spreadsheets/d/1EXR666AmWCTuTrifL-BtlwS4BgPs-n3NE0OQkhnAoHc/edit#gid=0", sheet = 1, col_types = c("c")) %>% 
+  mutate(filename = paste(str_remove(citation_intext,' .*'),year,abbr,sep='-') %>% str_remove('&') %>% str_to_lower()) %>%
+  group_by(filename) %>%
+  mutate(filename_num = 1:n()) %>%
+  unite("filename",filename,filename_num,sep="-") %>%
+  ungroup() %>% 
+  arrange(desc(year)) %>% 
+  mutate(count = 1:n()) %>% 
+  group_by(year) %>%
+  mutate(count_year = 1:n(),
+         count_auth = ifelse(str_detect(citation,"^<b>Young, E. S."), count*-1, count_year),
+         border     = ifelse(count_year == max(count_auth) | n()==1,"solid","none"),
+         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
+  arrange(desc(year),count_auth) %>% 
+  ungroup()
+```
+
+<h2 id = "recent-work" class="uk-h1 uk-text-center"><span>Recent Work</span></h2>
+
+```{r echo=F, message=F, warning=F, results='asis'}
+tags$div(
+  class = "uk-section-xsmall",
+  tags$div(
+    class = 'uk-flex',
+    HTML("<h3>First Authored Publications <a href = '/publications/' class = 'uk-icon-link uk-margin-left' uk-icon='chevron-right' uk-tooltip='View All'></a></h3>")
+  ),
+  HTML("<div class = 'uk-child-width-1-2@m uk-grid-match' uk-grid>"),
+  HTML( 
+    pubs %>%
+      arrange(desc(year)) %>%
+      mutate(
+        citation = str_replace(citation,"Young, E. S.","<b>Young, E. S.</b>")
+      ) %>% 
+      filter(pub_type == "journal") %>%
+      filter(featured==1) %>%
+      glue_data(
+        .open = "[",.close = "]",.na = "none",
+        "<div>",
+          "<div class='uk-card uk-card-hover uk-border-rounded uk-width-1-1@m'>",
+            "<div class='uk-card-body'>",
+              "<div class='uk-card-badge uk-label uk-padding-small uk-padding-remove-vertical uk-border-rounded' uk-tooltip='title: [journal]; pos: top'>[abbr]</div>",
+              "<h3 class='uk-card-title uk-margin-remove-bottom uk-text-bold'>[citation_intext] ([str_replace(year,'-', ' ')])</h3>",
+              "<p class='uk-text-meta uk-margin-remove-top'>[authors]</p>",
+              "<p>[title]</p>",
+              "<div class = 'uk-flex-bottom'>",
+                "<div class='uk-grid-small uk-flex-middle' uk-grid>",
+                  "<div>",
+                    "<a href='/publications/[pub_type]/[filename]/' class='uk-button uk-button-text'>Read More</a>",
+                  "</div>",
+                  "<div class = 'uk-width-expand'>",
+                    "<a href = '/publications/[download]' target='_blank' class = 'uk-icon-button' uk-icon = 'file-pdf' [ifelse(is.na(download),'hidden','')]></a>",
+                  "</div>",
+                "</div>",
+              "</div>",
+            "</div>",
+          "</div>",
+        "</div>",
+      )
+  ),
+  HTML("</div>")
+)
+```
+
+```{r echo=F, message=F, warning=F, results='asis'}
+tags$div(
+  class = "uk-section-xsmall",
+  tags$div(
+    class = 'uk-flex',
+    HTML("<h3>Co-authored Publications <a href = '/publications/' class = 'uk-icon-link uk-margin-left' uk-icon='chevron-right' uk-tooltip='View All'></a></h3>")
+  ),
+  HTML("<div class = 'uk-child-width-1-2@m uk-grid-match' uk-grid>"),
+  HTML(
+    pubs %>%
+      arrange(desc(year)) %>%
+      mutate(
+        citation = str_replace(citation,"Young, E. S.","<b>Young, E. S.</b>")
+      ) %>% 
+      filter(pub_type == "journal") %>%
+      filter(featured==2) %>%
+      glue_data(
+        .open = "[",.close = "]",.na = "none",
+         "<div>",
+          "<div class='uk-card uk-card-hover uk-border-rounded uk-width-1-1@m'>",
+            "<div class='uk-card-body'>",
+              "<div class='uk-card-badge uk-label uk-padding-small uk-padding-remove-vertical uk-border-rounded' uk-tooltip='title: [journal]; pos: top'>[abbr]</div>",
+              "<h3 class='uk-card-title uk-margin-remove-bottom uk-text-bold'>[citation_intext] ([year])</h3>",
+              "<p class='uk-text-meta uk-margin-remove-top'>[authors]</p>",
+              "<p>[title]</p>",
+              "<div class = 'uk-flex-bottom'>",
+                "<div class='uk-grid-small uk-flex-middle' uk-grid>",
+                  "<div>",
+                    "<a href='/publications/[pub_type]/[filename]/' class='uk-button uk-button-text'>Read More</a>",
+                  "</div>",
+                  "<div class = 'uk-width-expand'>",
+                    "<a href = '/publications/[download]' target='_blank' class = 'uk-icon-button' uk-icon = 'file-pdf' [ifelse(is.na(download),'hidden','')]></a>",
+                  "</div>",
+                "</div>",
+              "</div>",
+            "</div>",
+          "</div>",
+        "</div>",
+      )
+  ),
+  HTML("</div>")
+)
+```

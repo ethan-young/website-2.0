@@ -1,0 +1,150 @@
+---
+title: SEM Plots for Lavaan Models
+author: Ethan Young
+description: "Drawing path diagrams from lavaan objects in ggplot2"
+date: '2018-12-23'
+updated: "`r format(Sys.time(), '%B %d, %Y')`"
+tocbot: true
+slug: sem-diagrams-for-lavaan-models
+categories: []
+tags:
+  - SEM
+  - R
+  - ggplot2
+  - lavaan
+---
+
+### Introduciton
+
+In this post I show how to make a nice looking SEM diagram from a model object fitted with `lavaan`.
+
+```{r, message=F, warning=F}
+library(tidyverse)
+library(lavaan) 
+library(ggnetwork)
+```
+
+### Lavaan Model
+
+Below is the SEM model we are going to fit (from the lavaan website).
+
+```{r, message=F, warning=F}
+# Lavaan Model
+model <- '
+  # measurement model
+    ind60 =~ x1 + x2 + x3
+    dem60 =~ y1 + y2 + y3 + y4
+    dem65 =~ y5 + y6 + y7 + y8
+  # regressions
+    dem60 ~ ind60
+    dem65 ~ ind60 + dem60
+  # residual correlations
+    y1 ~~ y5
+    y2 ~~ y4 + y6
+    y3 ~~ y7
+    y4 ~~ y8
+    y6 ~~ y8
+'
+fit <- sem(model, data=PoliticalDemocracy)
+```
+
+Here is the output:
+
+```{r, message=F, warning=F}
+summary(fit, standardized=TRUE)
+```
+
+### Create Nodes
+
+Now we are going to create a nice `data.frame` to specify the locations of nodes (variables in the SEM model) and edges (paths connecting nodes). First, define where the nodes should be positioned spatially and create a `data.frame` to hold these data:
+
+```{r, message=F, warning=F}
+lavaan_parameters <- parameterestimates(fit)
+
+nodes <- lavaan_parameters %>% 
+  select(lhs) %>% 
+  rename(name = lhs) %>% 
+  distinct(name) %>% 
+  mutate(
+    x = case_when(str_detect(name,("^y"))      ~ 0,
+                  name %in% c("dem60","dem65") ~ .33,
+                  name == "ind60"              ~ .66,
+                  name == "x1"                 ~ .6,
+                  name == "x2"                 ~ .66,
+                  name == "x3"                 ~ .72),
+    y = case_when(name %in% c("x1","x2","x3")       ~ 1.05,
+                  name == "y1"                      ~ 1.05,
+                  name == "y2"                      ~ .9,
+                  name %in% c("y3","dem60")         ~ .75,
+                  name == "ind60"                   ~ .525,
+                  name == "y4"                      ~ .6,
+                  name == "y5"                      ~ .45,
+                  name %in% c("y6","dem65")         ~ .3,
+                  name == "y7"                      ~ .15,
+                  name == "y8"                      ~  0),
+    xend = x,
+    yend = y
+  )
+```
+
+### Create Edges
+
+Now the same for edges:
+
+```{r,message=F,warning=F}
+edges <- lavaan_parameters %>%
+  filter(op %in% c("~","=~"))
+```
+
+Next we need to combine our nodes and edges into a single table so we can plot it with `ggplot2`. To do this, we will merge the nodes and edges in a specific way to get all information represented in a single `data.frame`:
+
+```{r,message=F,warning=F}
+combined <- nodes %>% 
+  bind_rows(
+    left_join(edges,nodes %>% select(name,x,y),by=c("lhs"="name")) %>%
+      left_join(nodes %>% select(name,xend,yend),by = c("rhs"="name"))
+  )
+
+combined_edge_labels <- combined %>% 
+  mutate(
+    est = round(est,2),
+    p.code     = ifelse(pvalue<.05,"p < .05","p > .05"),
+    shape      = ifelse(str_detect(name,"y\\d|x\\d"),"observed","latent"),
+    midpoint.x = (x + xend)/2,
+    midpoint.y = (y + yend)/2,
+    x2    = ifelse(op=="~",xend,x),
+    xend2 = ifelse(op=="~",x,xend),
+    y2    = ifelse(op=="~",yend,y),
+    yend2 = ifelse(op=="~",y,yend),
+    rise = yend2-y2,
+    run  = x2-xend2,
+    dist = sqrt(run^2 + rise^2) %>% round(2),
+    newx = case_when(str_detect(rhs,"y\\d") ~ (x2 + (xend2 - x2) * .90),
+                     str_detect(rhs,"x\\d") ~ (x2 + (xend2 - x2) * .75),
+                     lhs == "dem65" & rhs == "dem60" ~ (x2 + (xend2 - x2) * .7),
+                     lhs == "dem65" & rhs == "ind60" ~ (x2 + (xend2 - x2) * .85),
+                     lhs == "dem60" & rhs == "ind60" ~ (x2 + (xend2 - x2) * .85)),
+    newy = case_when(str_detect(rhs,"y\\d") ~ (y2 + (yend2 - y2) * .90),
+                     str_detect(rhs,"x\\d") ~ (y2 + (yend2 - y2) * .85),
+                     lhs == "dem65" & rhs == "dem60" ~ (y2 + (yend2 - y2) * .85),
+                     lhs == "dem65" & rhs == "ind60" ~ (y2 + (yend2 - y2) * .9),
+                     lhs == "dem60" & rhs == "ind60" ~ (y2 + (yend2 - y2) * .9)),
+  )
+```
+
+### Make the Diagram
+
+Now we plot:
+
+```{r,message=F,warning=F}
+combined_edge_labels %>% 
+  ggplot(aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_edges(aes(x = x2, y = y2, xend = newx, yend = newy),
+             arrow = arrow(length = unit(6, "pt"), type = "closed",ends = "last")) +
+  geom_nodes(aes(shape = factor(shape,levels = c("observed","latent"))), color = "grey50",size = 16) +
+  geom_nodetext(aes(label = name),fontface = "bold") +
+  geom_label(aes(x = midpoint.x, y = midpoint.y, label = est), color = "black",label.size = NA,hjust = .5,vjust=.5) +
+  scale_y_continuous(expand = c(.05,0)) +
+  scale_shape_manual(values = c(15,19),guide=F) +
+  theme_blank()
+```

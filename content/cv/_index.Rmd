@@ -1,0 +1,386 @@
+---
+title: Curriculum Vitae
+tocbot: true
+---
+
+```{r setup,echo=F,message=F,warning=F}
+# Libraries
+library(tidyverse)
+library(glue)
+library(htmltools)
+library(googlesheets4)
+
+# Publications
+journals <- c("Journal of Personality and Social Psychology",
+              "Self and Identity",
+              "Psychological Science",
+              "Evolutionary Behavioral Sciences",
+              "Developmental Psychology",
+              "Attachment and Human Development",
+              "Trends in Cognitive Sciences",
+              "Development and Psychopathology")
+
+# Get pubs gsheet
+gs4_auth("young.ethan.scott@gmail.com")
+cv_data_url <- "https://docs.google.com/spreadsheets/d/1EXR666AmWCTuTrifL-BtlwS4BgPs-n3NE0OQkhnAoHc/edit#gid=0"
+pubs <- range_read(cv_data_url, sheet = 1, col_types = c("c")) %>% 
+  mutate(citation = str_replace(citation,"Young, E. S.","<span class = 'uk-text-bold uk-text-emphasis'>Young, E. S.</span>"),
+         citation = str_replace(citation, paste0("(",journals,")",collapse="|"), "<i>\\1\\2\\3\\4\\5\\6\\7\\8</i>"))
+positions <- range_read(cv_data_url, sheet = 2, col_types = c("c")) %>% arrange(desc(end))
+education <- range_read(cv_data_url, sheet = 3, col_types = c("c")) %>% arrange(desc(end))
+awards <- range_read(cv_data_url, sheet = 4, col_types = c("c")) %>% arrange(desc(end))
+teaching <- range_read(cv_data_url, sheet = 5, col_types = c("c")) %>% arrange(desc(year))
+
+# Journal articles
+articles <- pubs %>% 
+  mutate(filename = paste(str_remove(citation_intext,' .*'),year,abbr,sep='-') %>% str_remove('&') %>% str_to_lower()) %>%
+  group_by(filename) %>%
+  mutate(filename_num = 1:n()) %>%
+  unite("filename",filename,filename_num,sep="-") %>%
+  ungroup() %>% 
+  arrange(desc(year)) %>% 
+  mutate(count = 1:n()) %>% 
+  group_by(pub_type, year) %>%
+  mutate(count_year = 1:n(),
+         count_auth = ifelse(str_detect(citation,"^<b>Young, E. S."), count*-1, count_year),
+         border     = ifelse(count_year == max(count_auth) | n()==1,"solid","none"),
+         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
+  arrange(desc(year),count_auth) %>% 
+  ungroup()
+
+```
+
+```{r edu,echo=F,message=F,warning=F}
+tags$div(
+  class = "uk-section uk-section-default uk-section-small  uk-padding-remove-top",
+  tags$h3(class = 'uk-heading-divider uk-text-bold',"Education"),
+  tags$div(
+    class = "uk-container-xsmall uk-padding uk-padding-remove-vertical",
+    tags$table(
+      class = "uk-table uk-table-justify uk-table-small uk-margin uk-margin-auto",
+      HTML(
+        education %>% 
+          mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
+          glue_data(
+            "<tr>",
+            "<td class = 'uk-width-small uk-text-left'>",
+            "<span class = 'uk-text-bold uk-margin-left''>{end}</span>",
+            "</td>",
+            "<td>",
+            "<span class = 'uk-text-bold'>{degree}</span><br><span class = 'uk-text-muted'>{institution}<br>{subject}</span>",
+            "</td>",
+            "</tr>"
+          ) %>% 
+          paste(collapse = "")
+      )
+    )
+  )
+)
+```
+
+
+```{r academic_positions,echo=F,message=F,warning=F}
+tags$div(
+  class = "uk-section uk-section-default uk-section-xsmall uk-padding-remove-top",
+  tags$h3(class = 'uk-heading-divider uk-text-bold',"Academic Positions"),
+  tags$div(
+    class = "uk-container-xsmall uk-padding uk-padding-remove-vertical",
+    tags$table(
+      class = "uk-table uk-table-justify uk-table-small uk-margin uk-margin-auto",
+      HTML(
+        positions %>% 
+          mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
+          glue_data(
+            "<tr>",
+            "<td class = 'uk-width-small uk-text-left'>",
+            "<span class = 'uk-text-bold uk-margin-left'>{start}-{end}</span>",
+            "</td>",
+            "<td>",
+            "<span class = 'uk-text-bold'>{position}</span><br><span class = 'uk-text-muted'>{institution}<br>{people}</span>",
+            "</td>",
+            "</tr>"
+          ) %>% 
+          paste(collapse = "")
+      )
+    )
+  )
+)
+```
+
+
+```{r fellowships,echo=F,message=F,warning=F}
+tags$div(
+  class = "uk-section uk-section-default uk-section-small uk-padding-remove-top",
+  tags$h3(class = 'uk-heading-divider uk-text-bold',"Honors & Awards"),
+  tags$div(
+    class = "uk-container-xsmall uk-padding uk-padding-remove-vertical",
+    tags$h4(class = 'uk-h4 uk-text-italic uk-text-bold uk-margin-remove-vertical', "Awards"),
+    tags$table(
+      class = "uk-table uk-table-justify uk-table-small uk-margin uk-margin-auto",
+      HTML(
+        awards %>% 
+          filter(type=="award") %>% 
+          mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
+          glue_data(
+            "<tr>",
+            "<td class = 'uk-width-small uk-text-left'>",
+            "<span class = 'uk-text-bold uk-margin-left'>{ifelse(is.na(start),'',paste0(start,'-'))}{end}</span>",
+            "</td>",
+            "<td>",
+            "<span class = 'uk-text-bold'>{award}</span><br><span class = 'uk-text-muted'>{institution}</span>",
+            "</td>",
+            "</tr>"
+          ) %>% 
+          paste(collapse = "")
+      ),
+    ),
+    tags$h4(class = 'uk-h4 uk-text-italic uk-text-bold uk-margin-remove-vertical', "Fellowships"),
+    tags$table(
+      class = "uk-table uk-table-justify uk-table-small uk-margin uk-margin-auto",
+      HTML(
+        awards %>% 
+          filter(type=="fellowship") %>% 
+          mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
+          glue_data(
+            "<tr>",
+            "<td class = 'uk-width-small uk-text-left'>",
+            "<span class = 'uk-text-bold uk-margin-left''>{ifelse(is.na(start),'',paste0(start,'-'))}{end}</span>",
+            "</td>",
+            "<td>",
+            "<span class = 'uk-text-bold'>{award}</span><br><span class = 'uk-text-muted'>{department}<br>{institution}</span>",
+            "</td>",
+            "</tr>"
+          ) %>% 
+          paste(collapse = "")
+      )
+    )
+  )
+)
+```
+
+```{r peer_reviewed,echo=F,message=F,warning=F}
+tags$div(
+  class = "uk-section uk-section-default uk-section-small uk-padding-remove-top",
+  tags$h3(class = 'uk-heading-divider uk-text-bold',"Publications"),
+  tags$div(
+    class = "uk-container-xsmall uk-padding uk-padding-remove-vertical",
+    tags$h4(class = 'uk-h4 uk-text-italic uk-text-bold uk-margin-remove-vertical', "Peer-Reviewed Articles"),
+    tags$table(
+      class = "uk-table uk-table-justify uk-table-small uk-margin uk-margin-auto",
+      HTML(
+        articles %>% 
+          filter(pub_type=="journal", ! year %in% c('under-review','in-progress')) %>% 
+          mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
+          glue_data(
+            "<tr>",
+            "<td class = 'uk-width-small uk-text-left'>",
+            "<span class = 'uk-text-bold uk-margin-left'>{year_group}</span>",
+            "</td>",
+            "<td style = 'padding-left: 32px;'>",
+            "<p class = 'uk-text-muted' style = 'text-indent: -20px;'>{citation}<p>",
+            "<div class='uk-grid-small uk-flex-middle' uk-grid>",
+            "<div><a href='../publications/{pub_type}/{filename}/' class='uk-button uk-button-text'>Read More</a></div>",
+            "<div class = 'uk-width-expand'><a href = '../publications/{download}' target='_blank' class = 'uk-icon-button' uk-icon = 'file-pdf' {ifelse(is.na(download),'hidden','')}></a></div>",
+            "</div>",
+            "</td>",
+            "</tr>"
+          ) %>% 
+          paste(collapse = "")
+      ),
+    ),
+    tags$h4(class = 'uk-h4 uk-text-italic uk-text-bold uk-margin-remove-vertical', "Chapters"),
+    tags$table(
+      class = "uk-table uk-table-justify uk-table-small uk-margin uk-margin-auto",
+      HTML(
+        articles %>% 
+          filter(pub_type=="chapter") %>% 
+          mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
+          glue_data(
+            "<tr>",
+            "<td class = 'uk-width-small uk-text-left'>",
+            "<span class = 'uk-text-bold uk-margin-left'>{year_group}</span>",
+            "</td>",
+            "<td style = 'padding-left: 32px;'>",
+            "<p class = 'uk-text-muted' style = 'text-indent: -20px;'>{citation}<p>",
+            "<div class='uk-grid-small uk-flex-middle' uk-grid>",
+            "<div><a href='../publications/{pub_type}/{filename}/' class='uk-button uk-button-text'>Read More</a></div>",
+            "<div class = 'uk-width-expand'><a href = '../publications/{download}' target='_blank' class = 'uk-icon-button' uk-icon = 'file-pdf' {ifelse(is.na(download),'hidden','')}></a></div>",
+            "</div>",
+            "</td>",
+            "</tr>"
+          ) %>% 
+          paste(collapse = "")
+      )
+    ),
+    tags$h4(class = 'uk-h4 uk-text-italic uk-text-bold uk-margin-remove-vertical', "In Progress"),
+    tags$table(
+      class = "uk-table uk-table-justify uk-table-small uk-margin uk-margin-auto",
+      HTML(
+        articles %>% 
+          filter(in_progress == 1) %>% 
+          mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
+          glue_data(
+            "<tr>",
+            "<td class = 'uk-width-small uk-text-left'>",
+            "<span class = 'uk-text-bold uk-margin-left'>{year_group}</span>",
+            "</td>",
+            "<td style = 'padding-left: 32px;'>",
+            "<p class = 'uk-text-muted' style = 'text-indent: -20px;'>{citation}<p>",
+            "<div class='uk-grid-small uk-flex-middle' uk-grid>",
+            "<div><a href='../publications/{pub_type}/{filename}/' class='uk-button uk-button-text'>Read More</a></div>",
+            "<div class = 'uk-width-expand'><a href = '../publications/{download}' target='_blank' class = 'uk-icon-button' uk-icon = 'file-pdf' {ifelse(is.na(download),'hidden','')}></a></div>",
+            "</div>",
+            "</td>",
+            "</tr>"
+          ) %>% 
+          paste(collapse = "")
+      )
+    )
+  )
+)
+```
+
+
+```{r talks,echo=F,message=F,warning=F}
+tags$div(
+  class = "uk-section uk-section-default uk-section-small uk-padding-remove-top",
+  tags$h3(class = 'uk-heading-divider uk-text-bold',"Conference Presentations"),
+  tags$div(
+    class = "uk-container-xsmall uk-padding uk-padding-remove-vertical",
+    tags$h4(class = 'uk-h4 uk-text-italic uk-text-bold uk-margin-remove-vertical', "Talks"),
+    tags$table(
+      class = "uk-table uk-table-justify uk-table-small uk-margin uk-margin-auto",
+      HTML(
+        articles %>% 
+          filter(pub_type=="conference", pub_sub_type == "talk") %>% 
+          group_by(pub_sub_type, year) %>%
+          mutate(count_year = 1:n(),
+                 count_auth = ifelse(str_detect(citation,"^<b>Young, E. S."), count*-1, count_year),
+                 border     = ifelse(count_year == max(count_auth) | n()==1,"solid","none"),
+                 year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
+          arrange(desc(year),count_auth) %>% 
+          ungroup() %>% 
+          mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
+          glue_data(
+            "<tr>",
+            "<td class = 'uk-width-small uk-text-left'>",
+            "<span class = 'uk-text-bold uk-margin-left'>{year_group}</span>",
+            "</td>",
+            "<td style = 'padding-left: 32px;'>",
+            "<p class = 'uk-text-muted' style = 'text-indent: -20px;'>{citation}<p>",
+            "<div class='uk-grid-small uk-flex-middle' uk-grid>",
+            "<div><a href='../publications/{pub_type}/{filename}/' class='uk-button uk-button-text'>Read More</a></div>",
+            "<div class = 'uk-width-expand'><a href = '../publications/{download}' target='_blank' class = 'uk-icon-button' uk-icon = 'file-pdf' {ifelse(is.na(download),'hidden','')}></a></div>",
+            "</div>",
+            "</td>",
+            "</tr>"
+          ) %>% 
+          paste(collapse = "")
+      ),
+    ),
+    tags$h4(class = 'uk-h4 uk-text-italic uk-text-bold uk-margin-remove-vertical', "Posters"),
+    tags$table(
+      class = "uk-table uk-table-justify uk-table-small uk-margin uk-margin-auto",
+      HTML(
+        articles %>% 
+          filter(pub_type=="conference", pub_sub_type == "poster") %>% 
+          group_by(pub_sub_type, year) %>%
+          mutate(count_year = 1:n(),
+                 count_auth = ifelse(str_detect(citation,"^<b>Young, E. S."), count*-1, count_year),
+                 border     = ifelse(count_year == max(count_auth) | n()==1,"solid","none"),
+                 year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
+          arrange(desc(year),count_auth) %>% 
+          ungroup() %>% 
+          mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
+          glue_data(
+            "<tr>",
+            "<td class = 'uk-width-small uk-text-left'>",
+            "<span class = 'uk-text-bold uk-margin-left'>{year_group}</span>",
+            "</td>",
+            "<td style = 'padding-left: 32px;'>",
+            "<p class = 'uk-text-muted' style = 'text-indent: -20px;'>{citation}<p>",
+            "<div class='uk-grid-small uk-flex-middle' uk-grid>",
+            "<div><a href='../publications/{pub_type}/{filename}/' class='uk-button uk-button-text'>Read More</a></div>",
+            "<div class = 'uk-width-expand'><a href = '../publications/{download}' target='_blank' class = 'uk-icon-button' uk-icon = 'file-pdf' {ifelse(is.na(download),'hidden','')}></a></div>",
+            "</div>",
+            "</td>",
+            "</tr>"
+          ) %>% 
+          paste(collapse = "")
+      )
+    )
+  )
+)
+```
+
+```{r teaching, echo=F, message=F, warning=F}
+tags$div(
+  class = "uk-section uk-section-default uk-section-small uk-padding-remove-top",
+  tags$h3(class = 'uk-heading-divider uk-text-bold',"Teaching"),
+  tags$div(
+    class = "uk-container-xsmall uk-padding uk-padding-remove-vertical",
+    tags$h4(class = 'uk-h4 uk-text-italic uk-text-bold uk-margin-remove-vertical', "Instructor"),
+    tags$table(
+      class = "uk-table uk-table-justify uk-table-small uk-margin uk-margin-auto",
+      HTML(
+        teaching %>% 
+          filter(position=="Instructor") %>% 
+          mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
+          glue_data(
+            "<tr>",
+            "<td class = 'uk-width-small uk-text-left'>",
+            "<span class = 'uk-text-bold uk-margin-left'>{semester} {year}</span>",
+            "</td>",
+            "<td>",
+            "<span class = 'uk-text-bold'>{title} ({course})</span><br><span class = 'uk-text-muted'>{institution}</span>",
+            "</td>",
+            "</tr>"
+          ) %>% 
+          paste(collapse = "")
+      ),
+    ),
+    tags$h4(class = 'uk-h4 uk-text-italic uk-text-bold uk-margin-remove-vertical', "Section Leader"),
+    tags$table(
+      class = "uk-table uk-table-justify uk-table-small uk-margin uk-margin-auto",
+      HTML(
+        teaching %>% 
+          filter(position=="Section Leader") %>% 
+          mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
+          glue_data(
+            "<tr>",
+            "<td class = 'uk-width-small uk-text-left'>",
+            "<span class = 'uk-text-bold uk-margin-left'>{semester} {year}</span>",
+            "</td>",
+            "<td>",
+            "<span class = 'uk-text-bold'>{title} ({course})</span><br><span class = 'uk-text-muted'>{institution}</span>",
+            "</td>",
+            "</tr>"
+          ) %>% 
+          paste(collapse = "")
+      )
+    ),
+    tags$h4(class = 'uk-h4 uk-text-italic uk-text-bold uk-margin-remove-vertical', "Teaching Assistant"),
+    tags$table(
+      class = "uk-table uk-table-justify uk-table-small uk-margin uk-margin-auto",
+      HTML(
+        teaching %>% 
+          filter(position=="Teaching Assistant") %>% 
+          mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
+          glue_data(
+            "<tr>",
+            "<td class = 'uk-width-small uk-text-left'>",
+            "<span class = 'uk-text-bold uk-margin-left'>{semester} {year}</span>",
+            "</td>",
+            "<td>",
+            "<span class = 'uk-text-bold'>{title} ({course})</span><br><span class = 'uk-text-muted'>{institution}</span>",
+            "</td>",
+            "</tr>"
+          ) %>% 
+          paste(collapse = "")
+      )
+    )
+  )
+)
+```
+
+</div>

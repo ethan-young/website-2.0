@@ -1,0 +1,506 @@
+---
+title: dplyr verbs
+description: "A quick introduction dplyr's single table verbs, summarizing and grouping, and two table verbs"
+author: Ethan Young
+date: '2017-10-05'
+updated: "`r format(Sys.time(), '%B %d, %Y')`"
+tocbot: true
+slug: dplyr
+categories:
+  - tutorials
+tags:
+  - R
+  - dplyr
+  - code
+---
+
+### Why dplyr?
+
+The different tasks you can do with `dplyr` can be done with base R and other r-packages. So why learn `dplyr`? In my opinion, you should learn `dplyr` because it
+
+1. Is easy to use and understand
+2. Is fast and efficient
+3. Simplifies data manipulation
+4. Fits within broader philosophy of data science (e.g. the `tidyverse`)
+
+`dplyr`, along with other packages from the `tidyverse`, were designed to work well together because they share a common "grammar" and philosophy. The most important principle of `dplyr` is that all functions within the package take a `data.frame` as input and return a `data.frame as output`. This simple consistency makes it possible to reason about what different functions might be doing with data. More importantly, it means that once you learn one function, you can learn other functions with relative ease.
+
+I would encourage you to read [*R for Data Science*](http://r4ds.had.co.nz/index.html) if you want to dive deeper in to the philosophy of data science from the `tidyverse` perspective.
+
+### dplyr Verbs
+
+Below, you will find 3 topics that I think are the most important aspects of `dplyr`: 
+
+- Single-table verbs
+- Summary and grouping functions
+- Two-table verbs
+
+Single table verbs will help you slice and dice and create new variables in your data. I've focused on the 5 most common and most widely-used single-table verbs. Summary verbs help you create useful summaries of your data quickly and help you make these summaries according to groups. Two-table verbs help you systematically merge two datasets and make it clear what the result of your merge will look like.
+
+The functions described below are the main workhorse functions in `dplyr` but there are many others. I would encourage you to visit the [`dplyr`](http://dplyr.tidyverse.org/) website to see more tutorials and a complete function reference.
+
+### Setup & Example Data
+
+Below is the code needed to set up our R session. We'll need dplyr from the tidyverse package (you can also do `library(dplyr)`). I prefer to load the tidyverse package because it automatically loads a number of useful packages in a single line of code. We also need the psych package in order to grab the data we need. If you don't have it run `install.packages("psych")`.
+
+```{r example_data, message=F,warning=F}
+# Load packages
+library(tidyverse) 
+library(psych)
+library(psychTools)
+
+# Datasets from the psych package
+data("bfi")
+data("bfi.dictionary")
+
+# Convert datasets to tibbles
+bfi <- as_tibble(bfi)
+```
+
+This dataset is a sample of 2,800 observations for which 25 personality self report items were collected from the International Personality Item Pool ([IPIP](ipip.ori.org)) as a part of the SAPA (see the psych package description of for more details).
+
+To get a sense for these data, we can use `glimpse()` from `dplyr` to print out the dimensions of the dataset, the variables and their types, and the first few observations of each variable.
+
+#### bfi data
+
+```{r bfi}
+glimpse(bfi)
+```
+
+### Single Table Verbs 
+
+The first set of `dplyr` verbs that we will talk about and use are single-table verbs. Single-table operations are the most common and widely used verbs used in data manipulation. When I say "data manipulation", I am referring to:
+
+- selecting the relevant columns from a larger dataset (i.e. variables)
+- renaming variables with more useful labels
+- filtering the relevant rows (i.e. observations or cases) to the ones you want to analyze
+- arranging or sorting the observations in ways that help you inspect your data 
+- creating new variables based on existing variables (e.g. creating scale scores from a set of items). 
+
+These operations are likely very familiar to you but, at least in my beginning experiences with R, it was not always clear how they were executed in R. On top of this issue, it wasn't clear to me that this process was or could be systematic. `dplyr` makes these operations more explicit and helps you think about how to do such operations systematically. In fact, the so-called 5 most important verbs of `dplyr`do exactly what they sound like:
+
+```{r dplyr_table,echo=F,message=F,warning=F}
+tibble(`function`  = c("`select()`","`rename()`","`filter()`","`arrange()`","`mutate()`"),
+            description = c("Select relevant columns of your data",
+                            "Rename the columns of your data",
+                            "Filter your data according to logical statements",
+                            "Sort your data on a certain column, ascending or descending",
+                            "Create new variables and add them to your dataset")) %>% 
+  knitr::kable(format = "html", table.attr = "class=\"bordered\"")
+```
+
+Below are some examples of ways that I use these verbs in my work:
+
+#### Select
+
+Selecting variables is probably one of the most powerful dplyr operations. All that you need to do in order to select variables in a dataset is simply write out thier names (unquoted), like so: `select(data,var1,var2,var3)`. This code will select var1,var2, and var3 from the dataset data and give you a new dataset that only contains those columns.
+
+You can also “deselect” columns. For example, let’s say you didn’t want var1,var2, and var3 in your data but you wanted to keep everything else. Simply write the following code: `select(data,-var1,-var2,-var3)`. The `-` will drop those columns and give all other columns in your data.
+
+You can also do more complicated things (see below). For example, you can select all columns that have a particular prefix, suffix, or contain a particular word or certain letter sequences. Take a look at the example:
+
+##### Example
+
+First, because I am not terribly familiar with the BFI dataset from the psych package, I want to figure out which variables I actually need to look at personality. Luckily, the psych package provides a `bfi.dictionary` for this exact purpose.
+
+```{r}
+bfi.dictionary %>% 
+  rownames_to_column() %>% 
+  rename(bfi_item = rowname) %>% 
+  as_tibble()
+```
+
+After searching throught the codebook, I was able to deduce that all the personality variables have capital letter prefix for the trait that they measure with a trailing digit indicating the item number. Now I can quickly select subsets of these items depending on my needs.
+
+##### Select by variable name
+
+Let's say I just want to select a couple variables. This is the most straightforward way to use select. For example, I can select gender, age, and the 5 items that measure Agreeableness like so:
+
+```{r}
+# Spell out the variables you want to select
+bfi %>% select(gender, age, A1, A2, A3, A4, A5)
+```
+
+Alternatively, let's say I want everything but gender, age, and education:
+
+```{r}
+# select everything but gender, age, and education 
+bfi %>% select(-gender, -age, -education) 
+```
+
+Or, what if you know you just want the first few columns of the dataset and you don't want to type their names?
+
+```{r}
+# select the first 5 colunmns
+bfi %>% select(1:5) 
+```
+
+##### Select by string matches
+
+Using select with variable names is powerful but can involve a lot of typing if you need to select many variables. An even more powerful way to select is to utilize "select helpers". These include (descriptions from `select_helpers` help page): 
+
+- `starts_with()`: Starts with a prefix.
+- `ends_with()`: Ends with a suffix.
+- `contains()`: Contains a literal string.
+- `num_range()`: Matches a numerical range like x01, x02, x03.
+- `one_of()`: Matches variable names in a character vector.
+- `matches()`: Matches a regular expression.
+- `everything()`: Matches all variables.
+- `last_col()`: Select last variable, possibly with an offset.
+
+I use `starts_with()`, `ends_with()`, and `contains()` most frequently. However, `matches()` is the most powerful as it allows you to leverage regular expressions. A full discussion of regular experssions is beyond the scope of this post. In brief, regular expressions allow you to do complex string pattern matching.
+
+##### Examples
+
+For the following examples, I will be printing out the results of using different `select_helpers`. Note that I am going to print out column names (with `names()`) rather than the whole dataset for brevity.
+
+**`starts_with()`:** Let's say we only want Conscientiousness items:
+
+```{r}
+bfi %>% select(starts_with("C")) %>% names()
+```
+
+**`ends_with()`:** how about the first item of each scale?:
+
+```{r}
+bfi %>% select(ends_with("1")) %>% names()
+```
+
+**`contains()`:** how about all the Openness items?:
+
+```{r}
+bfi %>% select(contains("O")) %>% names()
+```
+
+Note that in this case `contains()` wasn't great because education contains an "o". We can fix that by specifying we want a capitol "O".
+
+```{r}
+bfi %>% select(contains("O", ignore.case = F)) %>% names()
+```
+
+**`num_range()`:** how about the last three items of Emotional Stability?:
+
+```{r}
+bfi %>% select(num_range(prefix = "N", 3:5)) %>% names()
+```
+
+**`one_of()`:** Let's say you wanted the last item of Emotional Stabilty but you weren't sure if there is 5 or 6 items:
+
+```{r}
+bfi %>% select(one_of("N5","N6")) %>% names()
+```
+
+**`matches()`:** Let's do something more complicated. How about finding all of the Conscientiousness items, the last 2 items of Emotional Stability, and the first three items of Openness?
+
+```{r}
+bfi %>% select(matches("^O[1-3]|^N[4-5]|^C")) %>% names()
+```
+
+#### Rename
+
+Renaming variables is pretty simply in dplyr. Simply type `rename(data, new.name.1 = old.name.1,new.name.2 = old.name.2)`. Here, you provide a new name (e.g. `new.name.1`) and set it equal to the old name in the data (e.g. `old.name.1`). See the example to see how `rename()` works.
+
+Note: that the more complicated examples are there to inspire you to learn how to systematically and programatically change many variables all at once.
+
+##### Examples
+
+```{r}
+# Old names
+names(bfi)
+```
+
+Rename just a couple of variables:
+
+```{r}
+# Simple rename
+bfi %>% 
+  rename(Agreeableness_1 = A1, Agreeableness_2 = A2) %>% 
+  names()
+```
+
+Rename a set of variables using a `rename_at()` (combination of select and rename):
+
+```{r}
+# More complicated rename
+bfi %>% 
+  rename_at(vars(matches("^A\\d")), funs(paste0("Agreeableness_",1:5))) %>% 
+  names()
+```
+
+```{r}
+labels <- bfi.dictionary %>% filter(str_detect(ItemLabel,"\\d$")) %>% pull(Big6) %>% as.character
+
+# Even more complicated rename
+bfi %>% 
+  rename_at(vars(matches("\\d$")), funs(str_replace(.,"^[[:upper:]]",labels))) %>% 
+  names()
+```
+
+#### Arrange
+
+Arranging columns is also very straight forward. Simply indicate which variable you want to use to arrange the data:  `arrange(data,column.to.arrange.by)`. You can specify a column wrapped in `desc()` to have it ordered in descending order instead.
+
+##### Example
+
+```{r}
+bfi %>% arrange(age)
+bfi %>% arrange(desc(age))
+```
+
+#### Filter
+
+Filtering data is an operation that you will undoubtedly need to use all the time. You filter data anytime you need to create some subset of a larger data set. To perform this operation you need to supply `filter()` with a logical expression. This expression will be applied to the dataset and only rows that meet your criteria (i.e. evaluate to `TRUE` after your logical expression), will be kept. Take a look at the example:
+
+##### Example
+
+This dataset is pretty big (N = `r nrow(bfi)`). I might want to use everyone in this dataset but it’s reasonable to see how certain research questions may not require the entire sample. For example, maybe I only want to look at adults who are younger than 65. This could be because 65 and younger adults are likely not retired, or maybe after 40 is a meaningful cutoff for certain questions.
+
+Whatever the case, you can quickly subset your data using `filter()`. Below I use the expression `Age < 40` inside my call to `filter()`. This expression will help `filter()` figure out which individuals are younger than 65 and only keep those individuals.
+
+```{r}
+bfi %>% 
+  filter(age <= 40) %>% 
+  select(age,everything()) %>% 
+  arrange(desc(age))
+```
+
+
+#### Mutate
+
+Mutate is the final (mainstream) verb among the single-table dplyr verbs. It’s a little more complicated than the others but I still think it’s intuitive. The point of `mutate()` is to create new variables based on existing variables and add them to your data.
+
+To use `mutate()` simply give your new variable a name followed by an `=`. Then, express how you want to calculate your new variable. See below for examples:
+
+##### Example
+
+To see how `mutate()` works, let's create composite scores for each personality trait.
+
+```{r}
+bfi %>% 
+  rowwise() %>% # make sure to calculate means across rows not columns
+  mutate(
+    Neuroticism       = mean(c(A1,A2,A3,A4,A5),na.rm=T),
+    Extraversion      = mean(c(C1,C2,C3,C4,C5),na.rm=T),
+    Openness          = mean(c(E1,E2,E3,E4,E5),na.rm=T),
+    Conscientiousness = mean(c(N1,N2,N3,N4,N5),na.rm=T),
+    Agreeableness     = mean(c(O1,O2,O3,O4,O5),na.rm=T)
+  ) %>% 
+  select(Neuroticism, Extraversion, Openness, Conscientiousness, Agreeableness)
+```
+
+
+#### Putting it all together
+
+Now that you have been introduced to the most important single-table dplyr verbs, let’s see how we might complete all of these steps in a single chain of function calls:
+
+```{r}
+bfi %>% 
+  filter(age <= 40) %>% 
+  rowwise() %>% 
+  mutate(Neuroticism       = mean(c(A1,A2,A3,A4,A5),na.rm=T),
+         Extraversion      = mean(c(C1,C2,C3,C4,C5),na.rm=T),
+         Openness          = mean(c(E1,E2,E3,E4,E5),na.rm=T),
+         Conscientiousness = mean(c(N1,N2,N3,N4,N5),na.rm=T),
+         Agreeableness     = mean(c(O1,O2,O3,O4,O5),na.rm=T)) %>% 
+  select(age,education,gender,Neuroticism, Extraversion, Openness, Conscientiousness, Agreeableness) %>% 
+  rename_all(tolower) %>% 
+  arrange(desc(age))
+```
+
+### Summarizing and Grouping
+
+Summarizing data can be tedious. It involves taking raw data and turning those data into useful summary statistics (e.g. means, standard deviations, minimum and maximun values, ranges, etc.). Furthermore, it's often useful to create such summaries within subgroups. For example, you may want to create summary values for each condition of an experiment or some other grouping variable.
+
+`dplyr` has a set of functions that specifically handle these operations and make it very easy and systematic to create the summaries you want to create.
+
+#### Summarize
+
+Summarizing in dplyr works the same way as `mutate()`. Using the function `summarize()`, we can specify a data set we want to summarize, give the name of the summary variable we want to create, and then a specific operation to perform. For example, if we wanted to find the mean of a single variable in a dataset we might write `summarize(data, summary.variable = mean(var1))`. The result of this function will be a single value: the mean of `var1`.
+
+##### Example - Simple Summaries
+
+Here, I want to know, for the whole dataset, what the mean, median, standard deviation, minimun and maximum ages in the BFI dataset.
+
+```{r}
+bfi %>% 
+  summarize(
+    mean    = mean(age,na.rm=T),
+    median  = median(age,na.rm=T),
+    sd      = sd(age,na.rm=T),
+    min     = min(age,na.rm=T),
+    max     = max(age,na.rm=T)
+)
+```
+
+#### Group By
+
+The power of `summarize()` becomes much greater when you use it in conjunction with `group_by()`. The point of `group_by()` is to group data into categories and perform operations on them. For example, maybe we want to know the mean of a particular variable but within a particular group category. We might right `group_by(data, grouping.variable) %>% summarize(mean = mean(var1))`. This will become more clear in the example below:
+
+##### Example - Grouped Summaries
+
+To see the utility of `group_by()` and `summarize()` let’s suppose we wanted to know all the same summary statistics for age but within each education level We could simply add one line to our already written code to make this happen seemlessly:
+
+```{r}
+bfi %>% 
+  group_by(education) %>% 
+  summarize(
+    mean    = mean(age,na.rm=T),
+    median  = median(age,na.rm=T),
+    sd      = sd(age,na.rm=T),
+    min     = min(age,na.rm=T),
+    max     = max(age,na.rm=T)
+)
+```
+
+The possibilities are quite broad once you start getting used the logic of grouping and summarizing variables. For example, you can make summary variables based on multiple grouping variables. Take a look:
+
+```{r}
+bfi %>% 
+  group_by(education,gender) %>% 
+  summarize(
+    mean    = mean(age,na.rm=T),
+    median  = median(age,na.rm=T),
+    sd      = sd(age,na.rm=T),
+    min     = min(age,na.rm=T),
+    max     = max(age,na.rm=T)
+)
+```
+
+### Two-Table Verbs
+
+Two-table verbs are `dplyr` functions that use two datasets and do something with them. Most commonly, these two-table verbs are used to merge data. However, as we will see, merging data is not necessarily a simple task and many problems arise when attempting even the simpliest of merges.
+
+In general, there are two types of joins: 
+
+1. Mutating joins, ones that add more variables to your data
+2. Filtering joings, ones that operate only on the observations of the data and do not add any new variables to your data.
+
+When using join functions, you will be explicitly supplying 2 data.frames and specific columns to match by. For example, you might want to merge two datasets from different timepoints in a longitudinal study. Thus, you will merge these datasets using a key, such as participant ID.
+
+#### Example Data
+
+To show how two-table verbs work, I will need another dataset to merge with the BFI data. The dataset we will use is a sample of 1,525 subjects from the Synthetic Aperture Personality Assessment (SAPA) web based personality assessment project (see the psych pacakge description for more details). The dataset contains variables that measure cognitive performance. Below is the code I used to get these data into R:
+
+```{r}
+# load the data from psych package
+data("ability")
+
+# convert it to a tibble
+ability <- as_tibble(ability)
+
+# take a look at the variables
+glimpse(ability)
+```
+
+#### Matching values
+
+The whole idea of joining datasets is predicated on the assumption that tables contain at least some of the same observations. In our case, we want to join the BFI data with the ability data so that we can look at participants who have completed personality and ability items. Our datasets do not actually have the same observations or at there is no column of unique observation identifiers to help us join the tables. As such, we are going to make some observation identifiers ourselves.
+
+```{r}
+# Set seed so you get the same results as me
+set.seed(1)
+
+# make ID numbers for the 2800 observations in the BFI data
+bfi_fake_ids <- bfi %>% 
+  mutate(id = 1:n())
+
+# make ID numbers for the 1525 observations in the ability data based on the BFI IDs
+ability_fake_ids <- ability %>% 
+  mutate(id = c(sample(bfi_fake_ids$id,1000,replace = F),3001:3525)) # make some IDs from bfi and some new ones
+```
+
+#### Mutating Joins
+
+Remember, mutating joins merge together two datasets. They are ‘mutating’ because the resulting merged dataset will contain more variables.
+
+#### Inner Join
+
+Inner joins (using `inner_join()`) will always return a data set that contains observations that exist in both data sets. As such, if I do an  `inner_join()` using the BFI and ability data, the newly joined dataset should only contain observations that match based on ID numbers:
+
+```{r}
+inner_join(bfi_fake_ids, ability_fake_ids, by = c("id" = "id"))
+```
+
+#### Left & Right Join
+
+##### Left Join
+
+A left_join() keeps all observations from the `data.frame` on the **left** and grabs only the observations from the right `data.frame` that match the left:
+
+```{r}
+left_join(bfi_fake_ids, ability_fake_ids, by = c("id" = "id"))
+```
+
+Notice that the number of observations is equal to the number observations in the left hand dataset:
+
+```{r}
+# joined data
+left_join(bfi_fake_ids, ability_fake_ids, by = c("id" = "id")) %>% nrow()
+
+# data on the left hand side
+bfi_fake_ids %>% nrow()
+```
+
+
+##### Right Join
+
+A `right_join()` keeps all observations from the `data.frame` on the **right** and grabs only the observations from the left data.frame that match the right:
+
+```{r}
+right_join(bfi_fake_ids, ability_fake_ids, by = c("id" = "id"))
+```
+
+Notice that the number of observations is equal to the number observations in the right hand dataset:
+
+```{r}
+# joined data
+right_join(bfi_fake_ids, ability_fake_ids, by = c("id" = "id")) %>% nrow()
+
+# data on the left hand side
+ability_fake_ids %>% nrow()
+```
+
+#### Full Join
+
+A `full_join()` keeps all observations from both the left **and** right `data.frames`, regardless of matches:
+
+```{r}
+full_join(bfi_fake_ids,ability_fake_ids, by = c("id"="id"))
+```
+
+Notice that the number of observations is `r nrow(full_join(bfi_fake_ids,ability_fake_ids, by = c("id"="id")))`. This number represents the total number of unique people that are either in the left hand or right hand dataset or both datasets.
+
+#### Filtering Joins
+
+Remember, filtering joins only affect the observations in your data, they don’t add any new variables. You might want to do a filtering join if you want to work with the obseravtions that appear in another dataset but you are not actually interested in using any of the variables in the other dataset. You might also do a filtering join to figure out why a join didn’t work.
+
+#### Semi Join
+
+A `semi_join()` simply keeps all observations that appear in left dataset that have a match in the right dataset. This is exactly the same as `inner_join()` except we didn’t add any variables to the dataset:
+
+```{r}
+semi_join(bfi_fake_ids, ability_fake_ids, by = c("id" = "id"))
+```
+
+Notice how the number of observations between the two joins are equal:
+
+```{r}
+semi_join(bfi_fake_ids, ability_fake_ids, by = c("id" = "id")) %>% nrow()
+inner_join(bfi_fake_ids, ability_fake_ids, by = c("id" = "id")) %>% nrow()
+```
+
+#### Anti Join
+
+An `anti_join()` drops all the rows in the left dataset that have a match in the right dataset. In our case, the `anti_join()` will give us a dataset with all the participants that completed the BFI but did not complete the cognitive assessment for our ability dataset:
+
+```{r}
+anti_join(bfi_fake_ids, ability_fake_ids, by = c("id" = "id"))
+```
+
+Notice that the number of observations is `r anti_join(bfi_fake_ids, ability_fake_ids, by = c("id" = "id")) %>% nrow()`. This number represents the total number of people that completed the BFI assessment but did not complete the cognitive assessment.
+
+```{r}
+anti_join(ability_fake_ids,bfi_fake_ids, by = c("id" = "id"))
+```
+
+Notice that the number of observations is `r anti_join(ability_fake_ids,bfi_fake_ids, by = c("id" = "id")) %>% nrow()`. This number represents the total number of people that completed the cognitive assessment but did not complete the BFI assessment.

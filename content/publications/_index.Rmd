@@ -1,0 +1,178 @@
+---
+title: Publications
+description: Journal articles, book chapters, and conference presentations
+---
+
+```{r echo=F, message=F, warning=F}
+library(tidyverse)
+library(glue)
+library(htmltools)
+library(googlesheets4)
+```
+
+```{r echo=F, message=F, warning=F, results='asis'}
+gs4_auth("young.ethan.scott@gmail.com")
+pubs <- range_read("https://docs.google.com/spreadsheets/d/1EXR666AmWCTuTrifL-BtlwS4BgPs-n3NE0OQkhnAoHc/edit#gid=0", sheet = 1, col_types = c("c"))
+
+articles <- pubs %>% 
+  mutate(filename = paste(str_remove(citation_intext,' .*'),year,abbr,sep='-') %>% str_remove('&') %>% str_to_lower()) %>%
+  group_by(filename) %>%
+  mutate(filename_num = 1:n()) %>%
+  unite("filename",filename,filename_num,sep="-") %>%
+  ungroup() %>% 
+  arrange(desc(year)) %>% 
+  mutate(count = 1:n()) %>% 
+  group_by(year) %>%
+  mutate(count_year = 1:n(),
+         count_auth = ifelse(str_detect(citation,"^<b>Young, E. S."), count*-1, count_year),
+         border     = ifelse(count_year == max(count_auth) | n()==1,"solid","none"),
+         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
+  arrange(desc(year),count_auth) %>% 
+  ungroup()
+
+walk(1:nrow(articles), function(x){
+  page_data <- articles %>%
+    mutate(year_arrange = ifelse(year == "in-progress","0",year)) %>% 
+    arrange(pub_type,desc(year_arrange),count_auth) %>% 
+    group_by(pub_type) %>% 
+    mutate(
+      download = str_remove(download,".*/"),
+      prev_pg = lag(filename) %>% ifelse(is.na(.), " ", .),
+      next_pg = lead(filename) %>% ifelse(is.na(.), " ", .)
+    ) %>% 
+    ungroup() %>% 
+    filter(row_number()==x)
+  
+  path <- glue_data(
+    page_data,
+    .open = "{", .close = "}",.na = "",
+    "{pub_type}/{filename}.md"
+  )
+  
+  title <- glue_data(
+    page_data,
+    .open = "{", .close = "}",.na = "",
+    "---\n",
+    "title:    \"{title}\"\n",
+    "intext:   \"{paste0(citation_intext, ' (', str_replace(year,'-', ' '), ')')}\"\n",
+    "abstract: \"{abstract}\"\n",
+    "authors:  \"{authors}\"\n",
+    "next_pg:  \"{ifelse(next_pg==' ', paste(''), paste0('../',next_pg,'/'))}\"\n",
+    "prev_pg:  \"{ifelse(prev_pg==' ', paste(''), paste0('../',prev_pg,'/'))}\"\n",
+    "pub_type: \"{pub_type}\"\n",
+    "iframe:   \"{ifelse(is.na(download),'',paste0('../',download))}\"\n",
+    "---"
+  )
+  
+  file.create(path)
+  
+  writeLines(text = title, con = path)
+
+}) 
+```
+
+<div class = 'uk-container'>
+
+```{r echo=F, message=F, warning=F, results='asis'}
+HTML(  
+  HTML(
+    "<div class='uk-padding uk-margin-auto' uk-grid>",
+    "<ul class = 'uk-flex-center uk-margin-auto uk-padding-remove-vertical' uk-tab>",
+    articles %>% 
+      distinct(pub_type) %>%
+      glue_data(
+        .open = "{", .close = "}",.na = "",
+        "<li class = 'uk-margin-auto'><a class='uk-padding-small uk-padding-remove-bottom' href='#'>{pub_type}</a></li>"
+      ) %>% paste(collapse = ""),
+    "</ul>",
+    "<ul class='uk-switcher uk-padding uk-padding-remove-vertical uk-width-1-1@m'>"
+  ),
+  HTML(
+    map(articles %>% distinct(pub_type) %>% pull(), function(x){
+      
+      ref_data <- articles %>% 
+        filter(pub_type==x)
+      
+      HTML(
+        "<li>
+          <div uk-filter='target: .js-filter'>
+            <div class='uk-flex-center uk-grid-small uk-child-width-auto' uk-grid>
+              <div>
+                <ul class='uk-subnav uk-subnav-pill' uk-margin>
+                    <li class='uk-active' uk-filter-control><a href='#'>All</a></li>
+                </ul>
+              </div>
+              <div>
+                 <ul class='uk-subnav uk-subnav-pill' uk-margin>",
+        map(ref_data %>% distinct(first_author) %>% pull(), function(y){
+          if(x == "conference"){
+            return(" ")
+          } else{
+          ref_data %>% filter(first_author==y) %>% 
+            glue_data(
+              .open = "{", .close = "}",.na = "",
+                  "<li uk-filter-control='filter: [data-author=\"{y}\"]; group: data-author'><a class = 'uk-border-rounded' href='#'>{ifelse(y==1, 'First Authored', 'Co-authored')}</a></li>",
+            )
+          }
+        }) %>% paste(collapse = ""),
+        "</ul>",
+        "</div>",
+        "<div>",
+        "<ul class='uk-subnav uk-subnav-pill' uk-margin>",
+        map(ref_data %>% distinct(pub_sub_type) %>% pull(), function(z){
+          ref_data %>% filter(pub_sub_type==z) %>% 
+            glue_data(
+              .open = "{", .close = "}",.na = "",
+              "<li uk-filter-control='filter: [data-type=\"{z}\"]; group: data-type'><a class = 'uk-border-rounded' href='#'>{z}</a></li>"
+            )
+        }) %>% paste(collapse = ""),
+        "</ul>
+              </div>
+            </div>",
+        "<ul class='js-filter uk-grid-match uk-child-width-1-2@m' uk-grid>",
+        ref_data %>%
+          mutate(year_arrange = ifelse(year == "in-progress","0",year)) %>% 
+          arrange(pub_type,desc(year_arrange),count_auth) %>% 
+          glue_data( 
+            .open = "{", .close = "}",.na = "",
+            "<li data-type = '{pub_sub_type}' data-year = '{str_replace(year,'-',' ')}' data-author = '{first_author}'>",
+            "<div class='uk-card uk-card-hover uk-border-rounded uk-card-body'>",
+            "<div class='uk-card-badge uk-label uk-text-small uk-padding-small uk-padding-remove-vertical uk-border-rounded' uk-tooltip='title: {journal}; pos: top'>{abbr}</div>",
+            "<h5 class='uk-margin-remove-bottom uk-text-bold'>{citation_intext} ({str_replace(year,'-',' ')})</h5>",
+            "<p class='uk-text-meta uk-text-truncate uk-margin-remove-top'>{authors}</p>",
+            "<p>{title}</p>",
+            "<div class = 'uk-flex-bottom'>",
+            "<div class='uk-grid-small uk-flex-middle' uk-grid>",
+            "<div><a href='{pub_type}/{filename}/' class='uk-button uk-button-text'>Read More</a></div>",
+            "<div class = 'uk-width-expand'><a href = './{download}' target='_blank' class = 'uk-icon-button' uk-icon = 'file-pdf' {ifelse(is.na(download),'hidden','')}></a></div>",
+            "</div>",
+            "</div>",
+            "</div>",
+            "</li>"
+          ) %>% paste(collapse = ""),
+        "</ul>
+          </div>",
+        "</li>"
+      )
+    }) %>% unlist() %>% paste(collapse = ""),
+    "</ul>",
+  ),
+  HTML("</div>")
+)
+```
+
+
+</div>
+
+<style>
+  #article-top h2:after {
+    position: absolute;
+    content: '';
+    width: 40px;
+    height: 3px;
+    top: 0;
+    left: 50%;
+    margin-left: -20px;
+    background: #f0506e;
+  }
+</style>

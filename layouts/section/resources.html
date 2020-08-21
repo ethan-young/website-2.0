@@ -1,0 +1,30 @@
+{{ define "title"}} {{ .Site.Title}} {{end}}
+{{ define "header"}} {{ partial "header" .}} {{end}}
+{{ define "main"}}
+
+<style>
+  #article-top h4:after {
+    position: absolute;
+    content: '';
+    width: 40px;
+    height: 3px;
+    top: 0;
+    left: 50%;
+    margin-left: -20px;
+    background: #f0506e;
+  }
+  
+</style>
+
+<div id = "article-top" class = 'uk-margin-bottom uk-position-relative'>
+  <h1 class = 'uk-heading-medium uk-padding uk-text-center uk-position-relative'>{{ .Params.title }}</h1>
+  <h4 class = "uk-text-center uk-text-italic uk-position-relative uk-padding uk-padding-remove-bottom uk-margin-remove-top">{{ .Params.description }}</h4>
+  <article id = "my-content" class = 'uk-container uk-container-xsmall uk-position-relative uk-padding-large uk-padding-remove-top'>
+  {{ partial "toc" . }}
+  {{.Content}}
+  </article>
+</div>
+
+{{ end }}
+
+{{ define "footer"}} {{ partial "footer" .}} {{end}}

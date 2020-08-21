@@ -1,0 +1,488 @@
+---
+title: Fitting Many Models at Once
+description: "This post explores how to fit many models at once for each participant in a dataset and extract model summaries to use as predictors."
+author: Ethan Young
+date: '2019-01-14'
+updated: "August 14, 2020"
+tocbot: true
+slug: list-columns
+tags:
+- R
+- code
+- iteration
+---
+
+
+
+<div id="introduction" class="section level3">
+<h3>Introduction</h3>
+<p>Developmental researchers will often use mixed-effects models or growth curve analysis to analyze change over time for a particular variable. These models allow researchers to test the effects of particular variables on the intercept and slope of a dependent variable across time. However, one might also be interested in quantifying not only intercepts and slopes but also residual variance and/or model fit statistics. As such, the following post tries to unpack a possible way to fit individual linear models to a list column for every case contained in a dataset. By extracting parameters from these models, such as R<sup>2</sup> or deviance, information beyond simple intercepts and slopes can be obtained and used in other analyses. The method utilizes here takes advantage of list columns, which are essentially lists contained within a <code>data.frame</code> and thereby facilitates the storage of lists for every observation or case in a data set in a clean and organized way. Using the <code>nest()</code> and <code>unnest()</code> functions from the R-package <code>tidyr</code>, we can work with these lists efficiently.</p>
+</div>
+<div id="setup" class="section level3">
+<h3>Setup</h3>
+<p>Below are the packages needed to reproduce the results from this post. Be sure to use <code>set.seed()</code> to obtain the exact same results as presented here.</p>
+<pre class="r"><code># packages
+library(tidyverse)
+library(broom)
+
+# ggplot theme
+extrafont::loadfonts()
+
+theme_set(
+  theme_light() +
+    theme(
+      text = element_text(family=&quot;Lato&quot;)
+    )
+)
+
+# setting the seed for reproducibility
+set.seed(4523)</code></pre>
+</div>
+<div id="contrived-examples" class="section level3">
+<h3>Contrived examples</h3>
+<p>To illustrate the method conceptually, let’s imagine a few way concrete ways in which the environment could change across time. Specifically, let’s assume that we can measure the environment in a reliable and valid manner across time. Below, I create a dataset containing 10 individuals each with ten measurements of their environemnt. Note that time stamps for these measurements are containted within the <code>time</code> column of this <code>data.frame</code>. Also note that this column is a list column, or a column of lists for each observation.</p>
+<pre class="r"><code>example_data &lt;- expand.grid(variance = c(0,1), intercept = c(-5,0,5),slope = c(-1,0,1)) %&gt;% 
+  as_tibble() %&gt;% 
+  mutate(
+    id   = 1:n(),
+    time = list(1:10)
+  )
+
+example_data</code></pre>
+<pre><code>## # A tibble: 18 x 5
+##    variance intercept slope    id time      
+##       &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;list&gt;    
+##  1        0        -5    -1     1 &lt;int [10]&gt;
+##  2        1        -5    -1     2 &lt;int [10]&gt;
+##  3        0         0    -1     3 &lt;int [10]&gt;
+##  4        1         0    -1     4 &lt;int [10]&gt;
+##  5        0         5    -1     5 &lt;int [10]&gt;
+##  6        1         5    -1     6 &lt;int [10]&gt;
+##  7        0        -5     0     7 &lt;int [10]&gt;
+##  8        1        -5     0     8 &lt;int [10]&gt;
+##  9        0         0     0     9 &lt;int [10]&gt;
+## 10        1         0     0    10 &lt;int [10]&gt;
+## 11        0         5     0    11 &lt;int [10]&gt;
+## 12        1         5     0    12 &lt;int [10]&gt;
+## 13        0        -5     1    13 &lt;int [10]&gt;
+## 14        1        -5     1    14 &lt;int [10]&gt;
+## 15        0         0     1    15 &lt;int [10]&gt;
+## 16        1         0     1    16 &lt;int [10]&gt;
+## 17        0         5     1    17 &lt;int [10]&gt;
+## 18        1         5     1    18 &lt;int [10]&gt;</code></pre>
+<p>With this data structure, we can imagine at least 3 important parameters that could capture different patterns of environmental change:</p>
+<ol style="list-style-type: decimal">
+<li>Intercepts: mean levels of harshness</li>
+<li>Slopes: the overall trajectory of change over time in the level of harshness</li>
+<li>Residual Variance: fluctuations in harshness around the overall trajectory of harshness</li>
+</ol>
+<p>With these parameters, we can visualize different hypothetical patterns of change over time. For example, it is possible to have an overall low, average, or high level of harshness across time with either a negative, flat, or positive trajectory. In addition, each pattern could be characteried by high or low residual variance.</p>
+<p>To visualize there patterns, I can unnest the dataset created above and create environmental stress measures as a function of a linear combination of differing intercepts and slopes with either high or low variance.</p>
+<pre class="r"><code>example_data &lt;- example_data %&gt;% 
+  unnest() %&gt;% 
+  group_by(id) %&gt;% 
+  mutate(
+    h_var     = rnorm(10, mean = 0, sd = 5),
+    l_var     = rnorm(10, mean = 0, sd = 1),
+    stress    = case_when(variance == 0 ~ intercept + time*slope + l_var,
+                          variance == 1 ~ intercept + time*slope + h_var),
+    intercept = factor(intercept, levels = c(5,0,-5), labels = c(&quot;low&quot;,&quot;medium&quot;,&quot;high&quot;)),
+    slope     = factor(slope, levels = c(1,0,-1),labels = c(&quot;positive&quot;,&quot;zero&quot;,&quot;negative&quot;))
+  )</code></pre>
+<p>The contrived dataset contains differing hypothetical developmental trajectories with both high and low variance</p>
+<div id="low-variance" class="section level4">
+<h4>Low Variance</h4>
+<pre class="r"><code>example_data %&gt;% 
+  filter(variance==0) %&gt;% 
+  ggplot(aes(x = time, y = stress)) +
+  geom_point() +
+  stat_smooth(method = &quot;lm&quot;) +
+  facet_grid(slope~intercept, scales=&quot;free_y&quot;) +
+  scale_x_continuous(&quot;Time&quot;,breaks = 1:10) +
+  scale_y_continuous(&quot;Stress Exposure Level&quot;) +
+  labs(title = &quot;Low Variance Stress Exposure Trajectories&quot;,
+       subtitle = &quot;Columns are intercepts, rows are slopes&quot;)</code></pre>
+<p><img src="/posts/2019-01-14-list-columns-unp_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+</div>
+<div id="high-variance" class="section level4">
+<h4>High Variance</h4>
+<pre class="r"><code>example_data %&gt;% 
+  filter(variance==1) %&gt;% 
+  ggplot(aes(x = time, y = stress)) +
+  geom_point() +
+  stat_smooth(method = &quot;lm&quot;) +
+  facet_grid(slope~intercept, scales=&quot;free_y&quot;) +
+  scale_x_continuous(&quot;Time&quot;,breaks = 1:10) +
+  scale_y_continuous(&quot;Stress Exposure Level&quot;) +
+  labs(title = &quot;Low Variance Stress Exposure Trajectories&quot;,
+       subtitle = &quot;Columns are intercepts, rows are slopes&quot;)</code></pre>
+<p><img src="/posts/2019-01-14-list-columns-unp_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+</div>
+</div>
+<div id="simulated-empirical-data" class="section level3">
+<h3>Simulated Empirical Data</h3>
+<p>Now that we have conceptualized different trajectories of environmental stress across time with varying combinations of intercepts, slopes, and residual variance, we can apply a method for calculating and extracting these parameters for a given longitudinal dataset.</p>
+<p>To illustrate, I created random data following the same structure as the examples above. I randomly vary the mean level of stress exposure for each participants repeated measurements of the environment along with randomly varying standard deviations.</p>
+<pre class="r"><code>stress_df &lt;- map_df(1:10, function(x){
+  tibble(id     = x,
+         time   = c(1:10),
+         stress = rnorm(n = 10, mean = sample(-5:5,1), sd = sample(seq(0,10,.1),1)))
+})</code></pre>
+</div>
+<div id="calculate-individual-regressions" class="section level3">
+<h3>Calculate Individual Regressions</h3>
+<p>Next, we can nest the data to compress each participant’s stress data into a list. By specifying a function that simply calculates a simple regression of stress on time, we can interate of each observation’s stress data contained within a list and save the results in a new list column containing each observation’s regression model.</p>
+<pre class="r"><code># Functions
+stress.lm &lt;- function(df){
+  lm(stress~time,data=df)
+}
+
+# Nest Data
+stress_df_nested &lt;- stress_df %&gt;% 
+  group_by(id) %&gt;% 
+  nest()
+
+# Fit a linear model to each observation
+stress_models &lt;- stress_df_nested %&gt;% 
+  group_by(id) %&gt;% 
+  mutate(
+    stress_lm    = map(data,stress.lm),
+    lm_stats     = map(stress_lm,glance),
+    lm_coefs     = map(stress_lm,tidy),
+    lm_vals      = map(stress_lm,augment),
+    lm_intercept = map_dbl(lm_coefs, function(x) unlist(x[1,&quot;estimate&quot;])),
+    lm_slope     = map_dbl(lm_coefs, function(x) unlist(x[2,&quot;estimate&quot;])),
+    lm_rsqrd     = lm_stats %&gt;% map_dbl(&quot;r.squared&quot;),
+    lm_deviance  = lm_stats %&gt;% map_dbl(&quot;deviance&quot;),
+    lm_sigma     = lm_stats %&gt;% map_dbl(&quot;sigma&quot;)
+  )</code></pre>
+<p>From each regression, we can extract interesting data, such as the predicted values and residuals values, and overall model parameters, such as the intercept, slope, R<sup>2</sup>, and deviance.</p>
+<p>To unpack these data, we can plot each of the participants data:</p>
+<pre class="r"><code># Plot all participants
+stress_models %&gt;% 
+  select(lm_vals) %&gt;%  
+  unnest() %&gt;% 
+  ggplot(aes(x = time, y = stress)) +
+  geom_segment(aes(x = time, xend = time, y = stress, yend= stress - .resid), color = &quot;red&quot;) +
+  stat_smooth(aes(x=time,y = stress), method = &quot;loess&quot;, se = F,span = 1) +
+  geom_point() +
+  geom_line(aes(y = .fitted),size=1) +
+  geom_point(aes(y = .fitted),shape=21,fill=&quot;white&quot;) +
+  scale_x_continuous(&quot;Time&quot;, breaks = 1:10) +
+  facet_wrap(~id,nrow = 5)</code></pre>
+<p><img src="/posts/2019-01-14-list-columns-unp_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p>These plots visualize each observation’s trajectory, including their intercept, slope, and residual variance. In addition, we can see a few of the model parameters that we extracted from each individual’s model:</p>
+<pre class="r"><code># Regression model parameters extracted from each participant
+stress_models %&gt;% 
+  select(id,lm_intercept,lm_slope,lm_rsqrd,lm_deviance,lm_sigma) %&gt;% 
+  knitr::kable(digits = 2, format = &quot;html&quot;, table.attr = &quot;class=\&quot;bordered\&quot;&quot;)</code></pre>
+<table class="bordered">
+<thead>
+<tr>
+<th style="text-align:right;">
+id
+</th>
+<th style="text-align:right;">
+lm_intercept
+</th>
+<th style="text-align:right;">
+lm_slope
+</th>
+<th style="text-align:right;">
+lm_rsqrd
+</th>
+<th style="text-align:right;">
+lm_deviance
+</th>
+<th style="text-align:right;">
+lm_sigma
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+-2.43
+</td>
+<td style="text-align:right;">
+0.73
+</td>
+<td style="text-align:right;">
+0.10
+</td>
+<td style="text-align:right;">
+408.77
+</td>
+<td style="text-align:right;">
+7.15
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4.37
+</td>
+<td style="text-align:right;">
+-0.16
+</td>
+<td style="text-align:right;">
+0.01
+</td>
+<td style="text-align:right;">
+249.60
+</td>
+<td style="text-align:right;">
+5.59
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+-8.17
+</td>
+<td style="text-align:right;">
+0.57
+</td>
+<td style="text-align:right;">
+0.30
+</td>
+<td style="text-align:right;">
+61.67
+</td>
+<td style="text-align:right;">
+2.78
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+-5.45
+</td>
+<td style="text-align:right;">
+0.41
+</td>
+<td style="text-align:right;">
+0.06
+</td>
+<td style="text-align:right;">
+216.24
+</td>
+<td style="text-align:right;">
+5.20
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+0.89
+</td>
+<td style="text-align:right;">
+-0.84
+</td>
+<td style="text-align:right;">
+0.42
+</td>
+<td style="text-align:right;">
+81.10
+</td>
+<td style="text-align:right;">
+3.18
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+-0.42
+</td>
+<td style="text-align:right;">
+-0.01
+</td>
+<td style="text-align:right;">
+0.00
+</td>
+<td style="text-align:right;">
+510.86
+</td>
+<td style="text-align:right;">
+7.99
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+-4.22
+</td>
+<td style="text-align:right;">
+-0.09
+</td>
+<td style="text-align:right;">
+0.00
+</td>
+<td style="text-align:right;">
+504.14
+</td>
+<td style="text-align:right;">
+7.94
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+-0.84
+</td>
+<td style="text-align:right;">
+-0.40
+</td>
+<td style="text-align:right;">
+0.18
+</td>
+<td style="text-align:right;">
+59.42
+</td>
+<td style="text-align:right;">
+2.73
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+0.86
+</td>
+<td style="text-align:right;">
+0.03
+</td>
+<td style="text-align:right;">
+0.00
+</td>
+<td style="text-align:right;">
+182.22
+</td>
+<td style="text-align:right;">
+4.77
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+0.17
+</td>
+<td style="text-align:right;">
+-0.34
+</td>
+<td style="text-align:right;">
+0.05
+</td>
+<td style="text-align:right;">
+188.93
+</td>
+<td style="text-align:right;">
+4.86
+</td>
+</tr>
+</tbody>
+</table>
+<p>The main idea here is that we can use this method to extract interesting parameters not normally leveraged in mixed-models and use them in further analysis, such as looking at how residual variance, a potential measure of unpredictability, might be a unique predictor of different kinds of outcomes.</p>
+</div>
+<div id="time-series-analysis" class="section level3">
+<h3>Time Series Analysis</h3>
+<p>We can also use techniques from time series analysis to describe longitudinal data. For example, we can calculate autocorrelation and partial autocorrelations in a time series or fit autoregression and moving average models (or a combination of the two) to a time series.</p>
+</div>
+<div id="time-series-data" class="section level3">
+<h3>Time Series Data</h3>
+<div id="visualizing-time-series" class="section level4">
+<h4>Visualizing Time Series</h4>
+<pre class="r"><code>stress_df %&gt;% 
+  ggplot(aes(x = time, y = stress)) +
+  stat_smooth(method=&quot;lm&quot;,se=F, alpha = .5, color = &quot;gray&quot;)+
+  geom_line() +
+  geom_point() +
+  facet_wrap(~id, nrow = 5)</code></pre>
+<p><img src="/posts/2019-01-14-list-columns-unp_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+</div>
+<div id="differenced-time-series" class="section level4">
+<h4>Differenced Time Series</h4>
+<pre class="r"><code>stress_df %&gt;% 
+  group_by(id) %&gt;% 
+  mutate(stress_diff = stress - lag(stress)) %&gt;% 
+  filter(id %in% c(1,2)) %&gt;% 
+  gather(key,value,-id,-time) %&gt;% 
+  mutate(key = factor(key,c(&quot;stress&quot;,&quot;stress_diff&quot;),c(&quot;Raw&quot;,&quot;Differenced&quot;))) %&gt;% 
+  ggplot(aes(x = time, y = value)) +
+  geom_line() +
+  geom_point() +
+  stat_smooth(method=&quot;lm&quot;,se=F) +
+  facet_grid(id~key)</code></pre>
+<p><img src="/posts/2019-01-14-list-columns-unp_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+</div>
+</div>
+<div id="autocorrelation" class="section level3">
+<h3>Autocorrelation</h3>
+<pre class="r"><code># Define custom autocorrelation functions
+stress_acf &lt;- function(df,index){
+  df %&gt;% pull(index) %&gt;%  acf(plot=F)
+}
+
+stress_pacf &lt;- function(df,index){
+  df %&gt;% pull(index) %&gt;%  pacf(plot=F)
+}
+
+# Run Auto and Partial autocorrelation functions on each participants time series
+stress_df_tseries &lt;- stress_df %&gt;% 
+  group_by(id) %&gt;% 
+  nest() %&gt;% 
+  mutate(
+    acf       = map(data,stress_acf,2),
+    pacf      = map(data,stress_pacf,2),
+    acf_data  = map(acf,function(x) data.frame(lag = x$lag, r = x$acf)),
+    pacf_data = map(pacf,function(x) data.frame(lag = x$lag, r = x$acf))
+  )</code></pre>
+<div id="visualize-autocorrelations" class="section level4">
+<h4>Visualize Autocorrelations</h4>
+<pre class="r"><code>stress_df_tseries %&gt;% 
+  select(id,acf_data) %&gt;% 
+  unnest() %&gt;% 
+  ggplot(aes(x = lag, y = r)) +
+  geom_hline(aes(yintercept = 0)) +
+  geom_hline(aes(yintercept = qnorm((1 + .95)/2)/sqrt(10)),linetype = &quot;dashed&quot;, color = &quot;blue&quot;) +
+  geom_hline(aes(yintercept = qnorm((1 + .95)/2)/sqrt(10)*-1),linetype = &quot;dashed&quot;, color = &quot;blue&quot;) +
+  geom_segment(aes(x = lag, xend = lag, y = 0, yend = r)) +
+  scale_x_continuous(&quot;Lag&quot;,breaks = 0:9) +
+  facet_wrap(~id,nrow = 5,scales = &quot;free&quot;)</code></pre>
+<p><img src="/posts/2019-01-14-list-columns-unp_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+</div>
+<div id="visualize-partial-autocorrelations" class="section level4">
+<h4>Visualize Partial Autocorrelations</h4>
+<pre class="r"><code>stress_df_tseries %&gt;% 
+  select(id,pacf_data) %&gt;% 
+  unnest() %&gt;% 
+  ggplot(aes(x = lag, y = r)) +
+  geom_hline(aes(yintercept = 0)) +
+  geom_hline(aes(yintercept = qnorm((1 + .95)/2)/sqrt(10)),linetype = &quot;dashed&quot;, color = &quot;blue&quot;) +
+  geom_hline(aes(yintercept = qnorm((1 + .95)/2)/sqrt(10)*-1),linetype = &quot;dashed&quot;, color = &quot;blue&quot;) +
+  geom_segment(aes(x = lag, xend = lag, y = 0, yend = r)) +
+  scale_x_continuous(&quot;Lag&quot;,breaks = 0:9) +
+  facet_wrap(~id,nrow = 5,scales = &quot;free&quot;)</code></pre>
+<p><img src="/posts/2019-01-14-list-columns-unp_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+</div>
+</div>

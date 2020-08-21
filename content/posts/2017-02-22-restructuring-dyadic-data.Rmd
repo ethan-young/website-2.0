@@ -1,0 +1,736 @@
+---
+title: Restructuring Dyadic Data
+description: 'Some code for restructuring data from individual to dyadic to pairwise formats and back again. '
+author: ''
+date: '2017-02-22'
+updated: "`r format(Sys.time(), '%B %d, %Y')`"
+slug: restructuring-dyadic-data
+categories: []
+tags:
+  - code
+  - dplyr
+  - R
+tocbot: true
+---
+
+### Introduction & Setup
+
+This post will explain how to restructure data without a Graphical User Interface (GUI) program e.g. [David Kenny's website]( [http://davidakenny.net/DyadR/RDDD.html). Instead, I will show you how to manipulate data both in a general sense and specifically for dyadic data analysis in a more flexible way by writing my own code and sharing it with you. Be forewarned, writing R-scripts can be frustrating but the payoffs are huge. I highly encourage you to move away from GUIs and start writing scripts for many, many reasons that I won't discuss here.
+
+To manipulate and restructure data, I will be using some really useful R-packages that all have the same underlying philosophy (mostly because they were written by the same guy: Hadley Wickham). I would encourage you to reference his book [R for Data Science](http://r4ds.had.co.nz/index.html), which explains some very useful theory on [tidy data](http://vita.had.co.nz/papers/tidy-data.html), research workflows, and tools that help execute a data analysis project in a clean, reproducible way.
+
+To setup my session I will first load the packages I will need.
+
+```{r setup, warning=F,message=F}
+library(tidyverse)
+library(haven)
+library(pixiedust)
+```
+
+### The tidyverse
+
+Notice that I am loading a package called [`tidyverse`](http://tidyverse.org/). This package will load the most commonly used R-packages for importing, tidying, and transforming data. These are: 
+
+- `ggplot2` for plotting
+- `tibble` for working with `data.frames` in a more efficient way
+- `tidyr` for "tidying" data (more later)
+- `readr` for reading tabular data into R
+- `purrr` for performing iteration over data structures
+- `dplyr` for manipulating and joining data
+
+For our purposes, we will mostly be using `tidyr`, `dplyr`, and `purrr`. We will also be using a package that comes with the `tidyverse` package but is not loaded explicitly by loading the `tidyverse` package: `haven`, which is very useful for loading SPSS, SAS, and Stata files into R. Note that when you install the `tidyverse` package, you will also install many other very useful packages (see below):
+
+```{r tidyverse,message=F,warning=F}
+tidyverse_packages() # list all packages including in the tidyverse
+```
+
+### Practice data
+
+To begin our data restructuring walk-through, I first downloaded practice data from David Kenny's [data restructuring link](http://davidakenny.net/DyadR/RDDD.htm). Reading through this webpage, it is clear that there are three different ways you might need to restructure data for dyadic data analysis:
+
+1. Converting individual data to dyadic
+2. Converting from individual data to pairwise
+3. Converting dyadic data to pairwise data
+
+David Kenny's website provides some input data for his data restructuring GUI programs. This is nice because I can download the input data and the output data and check the "correct" output data file against the one that I will produce later.
+
+First, I downloaded all the data and put them in the same folder where I am conducting my analysis. The starting individual level data file is a SPSS file whereas the pairwise and dyadic data files are comma separated value files (.csv). Below I download the files and get them into R. Note how nice it is to work with many and potentially diverse files in one place.
+
+```{r, message=F,warning=F}
+# Individual level data:
+indv <- read_sav("http://davidakenny.net/kkc/c1/indiv.sav") %>% # Use read_sav for SPSS files
+  rename(dyad_id = dyad) %>% 
+  rename_all(tolower)
+
+# Dyadic level data
+dyad <- read_csv("http://davidakenny.net/progs/dyad.csv",col_types = "dddddddddd") %>% 
+  rename_all(tolower)
+
+# Pairwise level data:
+pair <- read_csv("http://davidakenny.net/progs/pairwise.csv", col_types = "ddddddddddddd") %>% 
+  rename_all(tolower)
+```
+
+### 1. Individual to Dyadic
+
+Going from individual level data to dyadic level data is probably the most straightforward task of the three outlined above. With individual level data, each row represents a "case" or individual. Importantly, each individual is nested within a dyad, as indicated by the `dyad_id` column below.
+
+```{r,message=F,warning=F,echo=F}
+indv %>% 
+  arrange(dyad_id) %>% 
+  dust() %>% 
+  sprinkle(part="head",cols=1:ncol(indv),halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle(part="body",cols=3:6,bg="lightgray") %>% 
+  sprinkle(part="head",cols=3:6,bg="lightgray") %>% 
+  sprinkle(rows=indv %>% mutate(row = row_number()) %>% 
+             filter(gender==1) %>% 
+             select(row) %>% unlist,
+           cols=3:6, 
+           bg = "darkgray") %>% 
+  sprinkle_print_method("html")
+```
+
+Note that our task will be to take the cells highlighted in dark gray and make new columns that will become our "partner" data. When we do this, we will be cutting out these rows entirely and our total *N* will be cut in half when we do this. Note that this is possible because our new columns will be named in a way that differentiates partners from actors thus eliminating our need for the `gender` column. Since `dyad_id` is redundant, we only need one row per dyad to distinguish our cases. Thus our resulting data should look like the table below. 
+
+**Note that the dark gray cells are the same rows from the individual level data rows in dark gray above.**
+
+```{r,message=F,warning=F,echo=F}
+dyad %>% 
+  arrange(dyad_id) %>% 
+  dust() %>% 
+  sprinkle(part="head",halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle(cols=6:9,bg = "darkgray") %>% 
+  sprinkle_print_method("html")
+```
+
+So let's actually perform this operation using R functions from the `tidyverse` package. Below is the code that I used to convert individual data to dyad level data:
+
+```{r, message=F, warning=F}
+indv_dyad <- indv %>%                              # To be explained soon ;)
+  arrange(dyad_id) %>%                             # 
+  gather(key,value,-dyad_id,-betw,-gender) %>%     #
+  mutate(gender = ifelse(gender == 1,"h","w")) %>% #
+  unite(new_key,key,gender,sep = "_",remove=T) %>% #
+  spread(new_key,value)                            #
+```
+
+Let's walk through the code in steps. 
+
+First, I'm taking the starting data `indv` and telling `dplyr` to use the function `arrange()`. I pass the variable `dyad_id` to `arrange()` to tell `dplyr` to sort the columns from the lowest to highest `dyad_id`. This step is unnecessary but I like to arrange data in ways that make sense so I can better reason about the data and the functions I will need to call in order to complete a given data manipulation task.
+
+Next, I use the function `gather()` from the `tidyr` package. This function is powerful; it takes your data set and rearranges it into "key-value pairs". The most basic action `gather()` performs is taking your entire data set and creating two columns: one for the `key` name and the other for the `values`. The first two arguments for `gather()` are `key` and `value`. These are simply arbitrary names that will label the two columns I described above. Next, you can indicate columns that you *don't* want to gather by typing the column name with an `-` in front of it.
+
+For our case, I simply named our `key` and `value` columns "key" and "value" (remember these are arbitrary). Then I told `gather`, don't gather our `dyad_id`, `betw`, and `gender` columns. This simply means that they will be repeated however many times necessary. For our data, we are gathering all the "self" variables (there are 4 * 2 people within each dyad = 8 rows per dyad), thus all of our columns with a `-` sign will be repeated 8 times per dyad.
+
+```{r, message=F, warning=F,eval=F}
+indv %>% # <------------ Original data frame
+  arrange(dyad_id) %>% # Sort by the dyad_id column
+  gather(key,value,    # Gather data into key and value columns
+         -dyad_id,# |
+         -betw,   # | Do NOT gather these columns,
+         -gender) # | repeat them instead
+```
+
+```{r,message=F,warning=F,echo=F}
+indv %>% 
+  arrange(dyad_id) %>% 
+  gather(key,value,-dyad_id,-betw,-gender) %>% 
+  arrange(dyad_id) %>% 
+  select(dyad_id,gender,key,value) %>% 
+  dust %>% 
+  sprinkle(part="head",halign="center",pad=7,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle(part="head",cols=3:4,bg="lightgray") %>% 
+  sprinkle(cols=3:4,bg="lightgray") %>% 
+  sprinkle_print_method("html")
+```
+
+The next step is to make our `key` column more specific. That is, as it currently stands, the rows of the the `key` column only differentiate between each self variable (e.g. self1, self2, etc.). We need this column to differentiate between which self question AND which partner answered the that particular self question. Luckily, we have that information in our `gender` variable. Our next task is to add gender information to our key column. Note that for some reason Dr. Kenny uses the suffixes "_h" and "_w" to differentiate actor and partner self scores so we'll stick with that.
+
+On the line after our call to `gather()`, I use a function called `mutate()`, which creates a new column (i.e. variable) as a function of other columns (variables). Here I just want to match Dr. Kenny's example so I'm going to change `gender` to be coded as `1 = "h"` and `-1 = "w"`. This is achieved by using `mutate()` and using the expression `gender = ifelse(gender==1, "h","w")` inside `mutate`. This tells R to replace `gender` with the result of our `ifelse` call. `ifelse()` is useful because it takes a logical condition as it's first argument, in our case `gender==1`, *for each row* `ifelse()` checks to see if that condition is true. If it is, it replaces the value for that row with the second argument of the `ifelse()`, in our case `"h"`. The third argument of `ifelse()` controls what happens if the condition is not met (i.e. `FALSE`), for example if gender  is not equal to 1. Here we said we want to `ifelse()` to replace `gender` with `"w"` when `gender==1` (i.e. when `gender==-1`).
+
+Now that we have our newly recoded `gender` column, we can `unite()` `gender` with our `key` column. When we call `unite()`, we are asking R to do exactly what it sounds like, "unite" the values of `gender` with `key` into a new column called `new_key`. Note that we can specify and separator string, in our case `"_"` which will separate the values in `key` from `gender`. See below:
+
+Note that the default behavior for `unite()` is to remove the original columns that were used to make the newly united column. This is usually a good idea. Here I've kept them for visualization purposes.
+
+```{r, eval=F}
+indv %>% # <------------ Original data frame
+  arrange(dyad_id) %>% # Sort by the dyad_id column
+  gather(key,value,    # Gather data into key and value columns
+         -dyad_id,     # <
+         -betw,        # | Do NOT gather these columns, repeat them instead
+         -gender) %>%  # <
+  unite(new_key,       # <
+        key,           # | Create a new variable, "new_key",
+        gender,        # | by combining the values of
+        sep = "_",     # | "key" and "gender"
+        remove=F) # <----- This is normally set to TRUE
+```
+
+```{r,message=F,warning=F,echo=F}
+indv %>% 
+  arrange(dyad_id) %>% 
+  gather(key,value,-dyad_id,-betw,-gender) %>% 
+  mutate(gender = ifelse(gender == 1,"h","w")) %>% 
+  unite(new_key,key,gender,sep = "_",remove=F) %>% 
+  arrange(dyad_id) %>% 
+  select(dyad_id,key,gender,new_key,value) %>% 
+  dust() %>% 
+  sprinkle(part="head",halign="center",pad=7,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle(part="head",cols=2:3,bg="lightgray") %>% 
+  sprinkle(part="head",cols=4,bg="darkgray") %>% 
+  sprinkle(part="body",cols=4,bg="darkgray") %>%
+  sprinkle(cols=c(2,3),bg="lightgray") %>% 
+  sprinkle_print_method("html")
+```
+
+The last step in our process is to `spread()` our `new_key` column into new columns and use the `value` column to fill up the cells in these new columns. Remember that our `new_key` column now contains information about actors and partners as well as each of the 4 self variables. Each of these names, for example `self1_h` will become a new column after we use `spread()`. See below:
+
+```{r, eval=F}
+indv %>% # <------------ Original data frame
+  arrange(dyad_id) %>% # Sort by the dyad_id column
+  gather(key,value,    # Gather data into key and value columns
+         -dyad_id,     # <
+         -betw,        # | Do NOT gather these columns, repeat them instead
+         -gender) %>%  # <
+  unite(new_key,       # <
+        key,           # | Create a new variable, "new_key",
+        gender,        # | by combining the values of
+        sep = "_",     # | "key" and "gender"
+        remove=F) %>%  # <
+  spread(new_key,      # Spread the values of "key" into new columns and 
+         value)        # fill the cells of these columns with the values of "value"
+```
+
+```{r,message=F,warning=F,echo=F}
+indv %>% 
+  arrange(dyad_id) %>% 
+  gather(key,value,-dyad_id,-betw,-gender) %>% 
+  arrange(dyad_id) %>% 
+  mutate(gender = ifelse(gender == 1,"h","w")) %>% 
+  unite(new_key,key,gender,sep = "_",remove = T) %>% 
+  spread(new_key,value) %>%
+  select(dyad_id,ends_with("_w"),ends_with("_h")) %>% 
+  dust() %>% 
+  sprinkle(part="head",halign="center",pad=7,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle(cols=6:9,bg = "darkgray") %>% 
+  sprinkle(part="head",cols=6:9,bg="darkgray") %>% 
+  sprinkle_print_method("html")
+```
+
+Notice how our newly created data set looks identical to the original `dyad` data downloaded from Dr. Kenny's website. Let's do a formal check. Using the `dplyr` function `setequal()`, we can check to see if there exactly the same number of columns (with the same names) and exactly the same number of rows (with the same exact values):
+
+```{r}
+setequal(dyad,indv_dyad) # Match the two data sets, are they equal?
+```
+
+They are! YAY!
+
+### 2. Individual to Pairwise
+
+Now that we know how to transform data from the individual level format to a dyadic one, let's go over how to go from an individual level format to a pairwise format. Recall that in individual level data sets, we have one row per individual that is nested within a dyad. In pairwise data structures, we will keep this same general structure. Specifically, our input data file and output data file will have the same number of rows (i.e. the same *N*). The critical difference is that each row will represent BOTH the actor and partner data. That is, each individual's data will be reflected as actor variables for that specific individual's original row but will be reflected as partner data in that specific person's partner row.
+
+To illustrate, let's look at the original individual data set again:
+
+```{r,message=F,warning=F,echo=F}
+indv %>% 
+  arrange(dyad_id) %>% 
+  dust() %>% 
+  sprinkle(part="head",cols=1:ncol(indv),halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle_print_method("html")
+```
+
+Note that we only have one set of "self" variables but each person has unique scores on these variables in their respective rows. What we need to do is add new columns reflecting partner data but *maintain* the same number of rows and inserting data from each dyad member's partner into their row. Here is the output file from Dr. Kenny's website:
+
+```{r,message=F,warning=F,echo=F}
+pair %>% 
+  arrange(dyad_id) %>% 
+  dust() %>% 
+  sprinkle(part="head",cols=1:ncol(pair),halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle(cols=4:13,bg="lightgray") %>% 
+  sprinkle(rows=pair %>% mutate(row = row_number()) %>% 
+             filter(gender_a==1) %>% 
+             select(row) %>% unlist,
+           cols=4:8, 
+           bg = "darkgray") %>% 
+  sprinkle(rows=pair %>% mutate(row = row_number()) %>% 
+             filter(gender_p==1) %>% 
+             select(row) %>% unlist,
+           cols=9:13, 
+           bg = "darkgray") %>% 
+  sprinkle_print_method("html")
+```
+
+Notice how the data values in rows shaded in either dark gray or light gray are flipped across variables with the suffix "_a" and "_p". This is how the data look when every person's data is reflected as both actor data and partner data. We have the same *N* as before, however, we have 5 new variables that reflect each partner's data.
+
+To see how to do this in R, we need to touch on some of the same concepts as before with Individual to Dyadic transformations. However, because systematically flipping certain pairs of rows and using them to create new columns is a relatively rare thing, I had to write some special code but I think it still fits within our `tidyverse` framework discussed this far.
+
+Below is the code I used to transform the individual data from Dr. Kenny's website to a pairwise format. Let's walk through it:
+
+```{r, message=F, warning=F}
+indv_pair <- indv %>% 
+  split(.$dyad_id) %>% 
+  map_df(function(x){
+    
+    person1 <- x %>% 
+    mutate(act.par = ifelse(gender == 1,"a","p")) %>% 
+      gather(key,value,-dyad_id,-betw,-act.par) %>% 
+      unite(new_key,key,act.par) %>% 
+      spread(new_key,value)
+    
+    person2 <- x %>% 
+      mutate(act.par = ifelse(gender == 1,"p","a")) %>% 
+      gather(key,value,-dyad_id,-betw,-act.par) %>% 
+      unite(new_key,key,act.par) %>% 
+      spread(new_key,value)
+    
+    bind_rows(person1,person2)
+  }) %>% 
+  mutate(partnum = ifelse(gender_a == 1,1,2)) %>% 
+  select(dyad_id,partnum,betw,ends_with("_a"),ends_with("_p"))
+```
+
+First, I want to take the original `indv` data set we worked with in the last walk-through. Here however, I'm going to use a function called `split()`, which will take my data and create mini-data sets based on a grouping variable. Here I want `split` to split my data according to `dyad_id`. Note that, because `split()` is not a `tidyverse` function and because I am using the `pipe` operator i.e `%>%`, I needed to supply `split()` with `.` and the index operator `$` to find the variable `dyad_id` within the `indv` data set. This tells `split()` which variable within `indv` I should split the data by, in this case `dyad_id`. Here is the result:
+
+```{r,eval=F}
+indv %>% 
+  split(.$dyad_id)
+```
+
+```{r,message=F,warning=F,echo=F,results='markup'}
+indv %>% 
+  arrange(dyad_id) %>% 
+  split(.$dyad_id) %>% 
+      dust %>% 
+      sprinkle(part="head",cols=1:ncol(indv),halign="center",pad=5,border="all") %>% 
+      sprinkle(part="body",halign="center",border="all") %>% 
+      sprinkle_print_method("html")
+```
+
+Next, we will use the `map()` function from the `purrr` package, which is part of the `tidyverse`. `map()` is another very powerful and flexible function that applies a function to each element of a `list` or `data.frame`. Here, `map()` will be applying a function to each of those mini-datasets `split()` created. That is, the result of `split()` is a `list`, which can hold anything inside them, of `data.frames`. Since there is no explicit function for performing pairwise data restructuring, we are going to make our own function. This is where the function `map()` becomes very flexible. It can apply a ready made function to every element of a list or data frame or you can define your own within the call to `map()`, which is what I'm going to do.
+
+Note that I have the suffix `_df` at the end of `map`. This simply means that I want `map()` to make sure that the result is a `data.frame` and nothing else. If my function does not return a `data.frame`, `map()` will throw an error telling me so. Normally, the first argument to `map()` is a `list` or `data.frame` but remember we are piping in the `list` of `data.frame's` that `split()` produced by cutting up `indv` by `dyad_id`. 
+
+Next, we tell `map()` what function to perform to each of our mini-datasets. I use `function(x)` to say that I want to define a new function and it will take the argument `x`. The first thing I want to do is take `x` and do some stuff to it and call it `person1`. Note that `map()` is going to iterate over our `list` of `data.frames` and this means that inside our function `x` represents each individual mini-dataset we created. 
+
+Because we are flipping data around, I'm first going to have `map()` take each mini-dataset and create a new variable using `mutate()` called `act.par`. I'm going to use `ifelse()` to created `act.par` based on `gender`. If `gender==1`, I want `act.par=="a"` and if not I want `act.par=="p"`. I'm using "a" and "p" to refer to actor and partner, respectively. Then I'm going to do some familiar things with `gather()`, `unite()`, and `spread()`. Essentially, I'm gathering up all variables except `dyad_id`, `betw`, and `act.par` (which will get repeated). Then combining `key` and `act.par` and spreading those columns back out. This will result in our mini-dataset having *1* row.
+
+Then I repeat this process for a new object called `person2`. This time, however, `ifelse()` is flipping it's conditions such that if `gender==1` it get's replaced with "p" and "a" if `gender==-1`. For each mini-dataset, I have two objects, `person1` and `person2`. All, I need to do now is put `person1` and `person2` together and I have a pairwise mini-dataset.
+
+Here is what the result would look like for one dyad mini-dataset:
+
+```{r,message=F,warning=F,eval=F}
+indv %>% 
+  split(.$dyad_id) %>% 
+  map_df(function(x){
+    
+    person1 <- x %>% 
+    mutate(act.par = ifelse(gender == 1,"a","p")) %>% 
+      gather(key,value,-dyad_id,-betw,-act.par) %>% 
+      unite(new_key,key,act.par) %>% 
+      spread(new_key,value)
+    
+    person2 <- x %>% 
+      mutate(act.par = ifelse(gender == 1,"p","a")) %>% 
+      gather(key,value,-dyad_id,-betw,-act.par) %>% 
+      unite(new_key,key,act.par) %>% 
+      spread(new_key,value)
+    
+    bind_rows(person1,person2)
+  })
+```
+
+Person 1 (gathered)
+
+```{r,message=F,warning=F,echo=F}
+indv.gath.1 <- indv %>% 
+  filter(dyad_id==3) %>% 
+  mutate(act.par = ifelse(gender == 1,"a","p")) %>% 
+  gather(key,value,-dyad_id,-betw,-act.par) %>% 
+  unite(new_key,key,act.par)
+
+indv.gath.1 %>% 
+  dust() %>% 
+  sprinkle(part="head",cols=1:ncol(indv.gath.1),halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle(cols=3:4, rows = indv.gath.1 %>% 
+             mutate(row = row_number()) %>% 
+             filter(str_detect(new_key,"p")) %>% 
+             select(row) %>% unlist, bg="lightgray") %>% 
+  sprinkle(cols=3:4, rows = indv.gath.1 %>% 
+             mutate(row = row_number()) %>% 
+             filter(str_detect(new_key,"a")) %>% 
+             select(row) %>% unlist, bg="darkgray") %>% 
+  sprinkle_print_method("html")
+```
+
+Person 1 (spread out)
+```{r,message=F,warning=F,echo=F}
+indv %>% 
+  filter(dyad_id==3) %>% 
+  mutate(act.par = ifelse(gender == 1,"a","p")) %>% 
+  gather(key,value,-dyad_id,-betw,-act.par) %>% 
+  unite(new_key,key,act.par) %>% 
+  spread(new_key,value) %>% 
+  select(dyad_id,betw,ends_with("_a"),ends_with("_p")) %>% 
+  dust() %>% 
+  sprinkle(part="head",cols=1:12,halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle(cols = 3:7,bg="darkgray") %>%
+  sprinkle(cols = 8:12,bg="lightgray") %>% 
+  sprinkle_print_method("html")
+```
+
+Person 2 (gathered)
+
+```{r,message=F,warning=F,echo=F}
+indv.gath.2 <- indv %>% 
+  filter(dyad_id==3) %>% 
+  mutate(act.par = ifelse(gender == 1,"p","a")) %>% 
+  gather(key,value,-dyad_id,-betw,-act.par) %>% 
+  unite(new_key,key,act.par)
+
+indv.gath.2 %>% 
+  dust() %>% 
+  sprinkle(part="head",cols=1:ncol(indv.gath.2),halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle(cols=3:4, rows = indv.gath.2 %>% 
+             mutate(row = row_number()) %>% 
+             filter(str_detect(new_key,"a")) %>% 
+             select(row) %>% unlist, bg="lightgray") %>% 
+  sprinkle(cols=3:4, rows = indv.gath.2 %>% 
+             mutate(row = row_number()) %>% 
+             filter(str_detect(new_key,"p")) %>% 
+             select(row) %>% unlist, bg="darkgray") %>% 
+  sprinkle_print_method("html")
+```
+
+Person 2 (spread out)
+
+```{r,message=F,warning=F,echo=F}
+indv %>% 
+  filter(dyad_id==3) %>% 
+  mutate(act.par = ifelse(gender == 1,"p","a")) %>% 
+  gather(key,value,-dyad_id,-betw,-act.par) %>% 
+  unite(new_key,key,act.par) %>% 
+  spread(new_key,value) %>% 
+  select(dyad_id,betw,ends_with("_a"),ends_with("_p")) %>% 
+  dust() %>% 
+  sprinkle(part="head",cols=1:12,halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle(cols = 3:7,bg="lightgray") %>%
+  sprinkle(cols = 8:12,bg="darkgray") %>% 
+  sprinkle_print_method("html")
+```
+
+Combined mini-dataset
+
+```{r,message=F,warning=F,echo=F}
+indv %>% 
+  filter(dyad_id==3) %>% 
+  split(.$dyad_id) %>% 
+  map_df(function(x){
+    
+    person1 <- x %>% 
+      mutate(act.par = ifelse(gender == 1,"a","p")) %>% 
+      gather(key,value,-dyad_id,-betw,-act.par) %>% 
+      unite(new_key,key,act.par) %>% 
+      spread(new_key,value)
+    
+    person2 <- x %>% 
+      mutate(act.par = ifelse(gender == 1,"p","a")) %>% 
+      gather(key,value,-dyad_id,-betw,-act.par) %>% 
+      unite(new_key,key,act.par) %>% 
+      spread(new_key,value)
+    
+    bind_rows(person1,person2)
+  }) %>% 
+  select(dyad_id,betw,ends_with("_a"),ends_with("_p")) %>% 
+  dust() %>% 
+  sprinkle(part="head",cols=1:12,halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle(rows=1,cols = 3:7,bg="darkgray") %>%
+  sprinkle(rows=1,cols = 8:12,bg="lightgray") %>% 
+  sprinkle(rows=2,cols = 8:12,bg="darkgray") %>% 
+  sprinkle(rows=2,cols = 3:7,bg="lightgray") %>% 
+  sprinkle_print_method("html")
+```
+Recall that a convenient quality of the `purrr` package's `map()` functions is that you can supply a suffix to `map()` such as `map_df()` and that particular `map()` function will be sure to give you a `data.frame` as a result. This means that, although `split()` gave us a `list`, this `list` was comprised of `data.frames` so `map_df()` will automatically combine all of our mini-datasets back into one larger dataset. The result will be our final pairwise-transformed data set. The last two lines just adds a new `partnum` variable to help us remember who is who and then I simply order the variables according the order that Dr. Kenny has them ordered:
+
+```{r,message=F,warning=F,echo=F}
+indv %>% 
+  split(.$dyad_id) %>% 
+  map_df(function(x){
+    
+    person1 <- x %>% 
+      mutate(act.par = ifelse(gender == 1,"a","p")) %>% 
+      gather(key,value,-dyad_id,-betw,-act.par) %>% 
+      unite(new_key,key,act.par) %>% 
+      spread(new_key,value)
+    
+    person2 <- x %>% 
+      mutate(act.par = ifelse(gender == 1,"p","a")) %>% 
+      gather(key,value,-dyad_id,-betw,-act.par) %>% 
+      unite(new_key,key,act.par) %>% 
+      spread(new_key,value)
+    
+    bind_rows(person1,person2)
+  }) %>% 
+  mutate(partnum = ifelse(gender_a == 1,1,2)) %>% 
+  select(dyad_id,partnum,betw,ends_with("_a"),ends_with("_p")) %>% 
+  dust() %>% 
+  sprinkle(part="head",cols=1:13,halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle(cols=4:13,bg="lightgray") %>% 
+  sprinkle(rows=pair %>% mutate(row = row_number()) %>% 
+             filter(gender_a==1) %>% 
+             select(row) %>% unlist,
+           cols=4:8, 
+           bg = "darkgray") %>% 
+  sprinkle(rows=pair %>% mutate(row = row_number()) %>% 
+             filter(gender_p==1) %>% 
+             select(row) %>% unlist,
+           cols=9:13, 
+           bg = "darkgray") %>% 
+  sprinkle_print_method("html")
+```
+Is our new pairwise dataset identical to Dr. Kenny's?
+
+```{r}
+setequal(pair,indv_pair)
+```
+
+It is. It is indeed. ;)
+
+### 3. Dyad to Pairwise
+
+The final case where you might need to restructure your data from a dyadic structure to a pairwise structure. To do this transformation, we will simply do some reverse engineering of the transformations we've already performed. Note that at this point in the tutorial, you've already learned a lot about how to do different transformations using `tidyverse` packages and functions. Now we just need to apply the same skills we've used already to a new situation.
+
+Recall that our dyad data structure has half as many rows as our individual level data. Each row represents a dyad and we have two sets of self ratings - one for the actor and the other for the partner - denoted with a suffix "_a" or "_p". See below:
+
+```{r,message=F,warning=F,echo=F}
+dyad %>% 
+  arrange(dyad_id) %>% 
+  dust() %>% 
+  sprinkle(part="head",halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle_print_method("html")
+```
+
+To move from this dyadic data structure to a pairwise data structure, we need to expand this data again so that we have one row per person (i.e. double the *N*) but we need to keep both sets of "self" variables for actors and partners. Below is the code I use to move from a dyadic data structure to a pairwise structure:
+
+```{r, message=F, warning=F}
+dyad_pair <- dyad %>% 
+  gather(key,value,-dyad_id,-betw) %>% 
+  mutate(gender = ifelse(str_detect(key,"_h"),1,-1),
+         key    = str_replace(key,"_w|_h","")) %>%
+  spread(key,value) %>% 
+  split(.$dyad_id) %>% 
+  map_df(function(x){
+    
+    person1 <- x %>% 
+      mutate(act.par = ifelse(gender == 1,"a","p")) %>% 
+      gather(key,value,-dyad_id,-betw,-act.par) %>% 
+      unite(key,key,act.par) %>% 
+      spread(key,value)
+    
+    person2 <- x %>% 
+      mutate(act.par = ifelse(gender == 1,"p","a")) %>% 
+      gather(key,value,-dyad_id,-betw,-act.par) %>% 
+      unite(key,key,act.par) %>% 
+      spread(key,value)
+    
+    bind_rows(person1,person2)
+  }) %>% 
+  mutate(partnum = ifelse(gender_a == 1,1,2)) %>% 
+  select(dyad_id,partnum,betw,ends_with("_a"),ends_with("_p"))
+```
+
+All of this code should look very familiar. In fact, most of it is copied and pasted from our individual to pairwise data restructuring code. This is because the only real difference between dyadic to pairwise and individual to pairwise data transformation is turning dyadic data back into individual level data. After that is complete, we follow the same steps we took when we converted individual to pairwise data transformation.
+
+Note that going from dyadic to individual level data is an easy task because all you need to do perform the reverse actions on the dyadic data that you used to get there in the first place. Note that the functions we have been using from the `tidyr` package (one of the foundational packages in the `tidyverse`) are all reversible. For example, the function `gather()` and `spread()` actually undo each other. The same is true for `unite()` and a function we have not used yet, `separate()`; `unite()` puts the values of two columns together whereas `separate()` breaks them apart, undoing the work of `unite()`. 
+
+To illustrate, let's look at our code from the individual to dyadic data restructuring walk-through. Note steps 1-4:
+
+```{r,eval=F}
+indv_dyad <- indv %>%                              # 
+  arrange(dyad_id) %>%                             # 
+  gather(key,value,-dyad_id,-betw,-gender) %>%     # <- 1) gather
+  mutate(gender = ifelse(gender == 1,"h","w")) %>% # <- 2) Recode gender
+  unite(new_key,key,gender,sep = "_",remove=T) %>% # <- 3) unite gender and key
+  spread(new_key,value) # <---------------------------- 4) spread your colums out
+```
+
+And take a look at the code that we will use to go back to individual level data. We will now perform the *reverse* operations (the opposite functions of the above code) in *reverse* order (performing steps 1-4 in reverse order):
+
+```{r,eval=F}
+dyad %>%
+  gather(key,value,-dyad_id,-betw) %>% # <----------- Undo step 4): use 'gather()' 
+  separate(key,c("key","gender"),sep = "_") %>%  # <- Undo step 3): undo 'unite()' 
+  mutate(gender = ifelse(gender=="h",1,-1)) %>%  # <- Undo step 2): recode gender  
+  spread(key,value) # <------------------------------ Undo step 1): undo gather 
+```
+
+1. Here is the result of the first step, undoing `spread()`:
+
+```{r,eval=F}
+dyad %>% 
+  gather(key,value,-dyad_id,-betw)
+```
+
+```{r,message=F,warning=F,echo=F}
+dyad %>% 
+  arrange(dyad_id) %>% 
+  gather(key,value,-dyad_id,-betw) %>% 
+  arrange(dyad_id) %>% 
+  dust() %>% 
+  sprinkle(part="head",halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle_print_method("html")
+```
+
+2. Now the second step, undoing `unite()`:
+
+```{r,eval=F}
+dyad %>% 
+  gather(key,value,-dyad_id,-betw) %>% 
+  separate(key,c("key","gender"),sep = "_")
+```
+
+```{r,message=F,warning=F,echo=F}
+dyad %>% 
+  arrange(dyad_id) %>% 
+  gather(key,value,-dyad_id,-betw) %>% 
+  separate(key,c("key","gender"),sep = "_") %>%
+  arrange(dyad_id) %>% 
+  dust() %>% 
+  sprinkle(part="head",halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle_print_method("html")
+```
+
+3. Next, we recode gender back to -1 and 1:
+
+```{r,eval=F}
+dyad %>% 
+  gather(key,value,-dyad_id,-betw) %>% 
+  separate(key,c("key","gender"),sep = "_") %>% 
+  mutate(gender = ifelse(gender=="h",1,-1))
+```
+
+```{r,message=F,warning=F,echo=F}
+dyad %>% 
+  arrange(dyad_id) %>% 
+  gather(key,value,-dyad_id,-betw) %>% 
+  separate(key,c("key","gender"),sep = "_") %>%
+  mutate(gender = ifelse(gender=="h",1,-1)) %>%
+  arrange(dyad_id) %>% 
+  dust() %>% 
+  sprinkle(part="head",halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle_print_method("html")
+```
+
+4. Finally, we `spread()` the columns back out, undoing `gather()`
+
+```{r,eval=F}
+dyad %>% 
+  gather(key,value,-dyad_id,-betw) %>% 
+  separate(key,c("key","gender"),sep = "_") %>% 
+  mutate(gender = ifelse(gender=="h",1,-1)) %>% 
+  spread(key,value)
+```
+
+```{r,message=F,warning=F,echo=F}
+dyad %>% 
+  arrange(dyad_id) %>% 
+  gather(key,value,-dyad_id,-betw) %>% 
+  separate(key,c("key","gender"),sep = "_") %>%
+  mutate(gender = ifelse(gender=="h",1,-1)) %>%
+  spread(key,value) %>% 
+  arrange(dyad_id) %>% 
+  dust() %>% 
+  sprinkle(part="head",halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle_print_method("html")
+```
+
+Now our dataset is back to its individual level form. To get to a pairwise data structure, we simply do exactly the same steps we performed in Individual to Pairwise tutorial. Here is the full code again:
+
+```{r, message=F, warning=F,eval=F}
+dyad_pair <- dyad %>%                                 # 
+  gather(key,value,-dyad_id,-betw) %>%                # 
+  mutate(gender = ifelse(str_detect(key,"_h"),1,-1),  # Going back to individual level
+         key    = str_replace(key,"_w|_h","")) %>%    # 
+  spread(key,value) %>%                               # 
+  split(.$dyad_id) %>%                                  #
+  map_df(function(x){                                   #
+                                                        #
+    person1 <- x %>%                                    #
+      mutate(act.par = ifelse(gender == 1,"a","p")) %>% #
+      gather(key,value,-dyad_id,-betw,-act.par) %>%     # These are the same
+      unite(key,key,act.par) %>%                        # steps we took when
+      spread(key,value)                                 # we transfomred individual
+                                                        # to pairwise data structures
+    person2 <- x %>%                                    #
+      mutate(act.par = ifelse(gender == 1,"p","a")) %>% #
+      gather(key,value,-dyad_id,-betw,-act.par) %>%     #
+      unite(key,key,act.par) %>%                        #
+      spread(key,value)                                 #
+                                                        #
+    bind_rows(person1,person2)                          #
+  }) %>% 
+  mutate(partnum = ifelse(gender_a == 1,1,2)) %>% 
+  select(dyad_id,partnum,betw,ends_with("_a"),ends_with("_p"))
+```
+
+```{r,message=F,warning=F,echo=F}
+dyad %>%                                 # 
+  gather(key,value,-dyad_id,-betw) %>%                # 
+  mutate(gender = ifelse(str_detect(key,"_h"),1,-1),  # Going back to individual level
+         key    = str_replace(key,"_w|_h","")) %>%    # 
+  spread(key,value) %>%                               # 
+  split(.$dyad_id) %>%                                  #
+  map_df(function(x){                                   #
+                                                        #
+    person1 <- x %>%                                    #
+      mutate(act.par = ifelse(gender == 1,"a","p")) %>% #
+      gather(key,value,-dyad_id,-betw,-act.par) %>%     # These are the same
+      unite(key,key,act.par) %>%                        # steps we took when
+      spread(key,value)                                 # we transfomred individual
+                                                        # to pairwise data structures
+    person2 <- x %>%                                    #
+      mutate(act.par = ifelse(gender == 1,"p","a")) %>% #
+      gather(key,value,-dyad_id,-betw,-act.par) %>%     #
+      unite(key,key,act.par) %>%                        #
+      spread(key,value)                                 #
+                                                        #
+    bind_rows(person1,person2)                          #
+  }) %>% 
+  mutate(partnum = ifelse(gender_a == 1,1,2)) %>% 
+  select(dyad_id,partnum,betw,ends_with("_a"),ends_with("_p")) %>% 
+  dust() %>% 
+  sprinkle(part="head",cols=1:ncol(pair),halign="center",pad=5,border="all") %>% 
+  sprinkle(part="body",halign="center",border="all") %>% 
+  sprinkle_print_method("html")
+```
+
+Finally, is our `dyad_pair` dataset the same as Dr. Kenny's pairwise dataset?
+
+```{r}
+setequal(pair,dyad_pair)
+```
+
+Success!!
+
+<script>
+$(document).ready(function(){
+  $("table").wrap("<div class = 'uk-overflow-auto'></div>");
+});
+</script>

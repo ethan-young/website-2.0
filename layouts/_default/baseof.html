@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Required meta tags -->
+    <title>{{ .Site.Title }}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    {{ $default_noindex_kinds := slice "section" "taxonomy" "taxonomyTerm" }}
+    {{ $noindex_kinds := .Site.Params.noindex_kinds | default $default_noindex_kinds }}
+    {{ $is_noindex_true := and (isset .Params "noindex") .Params.noindex }}
+    {{ if or (in $noindex_kinds .Kind) ($is_noindex_true) }}
+    <meta name="robots" content="noindex">
+    {{ end }}
+    
+    <link rel="stylesheet" href="{{ "/dist/css/uikit.my-theme.css" | relURL }}" />
+    <link href="{{ "/font/font.css" | relURL }}" rel="stylesheet" type="text/css">
+    <script src="{{ "/dist/js/uikit.min.js" | relURL }}"></script>
+    <script src="{{ "/dist/js/uikit-icons.min.js" | relURL }}"></script>
+    <link rel="stylesheet" href="/academicons-1.8.6/css/academicons.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <script src="{{ "/my-js/jquery-2.1.4.min.js" | relURL }}" type="text/javascript"></script>
+    <script src="{{ "/my-js/lunr.min.js" | relURL }}" type="text/javascript"></script>
+    <script src="{{"/my-js/auto-complete.js" | relURL}}" type="text/javascript"></script>
+    <link href="{{"/my-css/auto-complete.css" | relURL}}" rel="stylesheet">
+    <script type="text/javascript">
+      var baseurl = "{{.Site.BaseURL}}";
+    </script>
+    <script src="{{"/my-js/search.js" | relURL}}" type="text/javascript" ></script>
+  </head>
+  <body>
+    <!-- header -->
+    {{ partial "header.html" .}}
+    
+    <!-- The part of the page that begins to differ between templates -->
+    {{ block "main" . }}
+    {{ end }}
+
+    <!-- footer -->
+    {{ partial "footer.html" .}}
+
+  </body>
+  <script src="/clipboard.js-master/dist/clipboard.min.js"></script>
+  <link href="{{ "/highlight/styles/tomorrow.css" | relURL }}" rel="stylesheet">
+  <script src="{{ "/highlight/highlight.pack.js" | relURL }}" type = "text/javascript"></script>
+  <script type="text/javascript">
+    hljs.initHighlightingOnLoad();
+  </script>
+  <style>
+    pre {
+      border: 1px none #e5e5e5;
+      background-color: #f8f8f8;
+    }
+    pre.r code.hljs{
+      background-color: #f8f8f8;
+    }
+    code.hljs.r{
+      background-color: #f8f8f8;
+    }
+    
+    .hljs-comment{
+      font-style: italic;
+      color: #718c00;
+    }
+  </style>
+</html>

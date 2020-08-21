@@ -1,0 +1,812 @@
+---
+title: dplyr verbs
+description: "A quick introduction dplyr's single table verbs, summarizing and grouping, and two table verbs"
+author: Ethan Young
+date: '2017-10-05'
+updated: "August 14, 2020"
+tocbot: true
+slug: dplyr
+categories:
+  - tutorials
+tags:
+  - R
+  - dplyr
+  - code
+---
+
+
+
+<div id="why-dplyr" class="section level3">
+<h3>Why dplyr?</h3>
+<p>The different tasks you can do with <code>dplyr</code> can be done with base R and other r-packages. So why learn <code>dplyr</code>? In my opinion, you should learn <code>dplyr</code> because it</p>
+<ol style="list-style-type: decimal">
+<li>Is easy to use and understand</li>
+<li>Is fast and efficient</li>
+<li>Simplifies data manipulation</li>
+<li>Fits within broader philosophy of data science (e.g. the <code>tidyverse</code>)</li>
+</ol>
+<p><code>dplyr</code>, along with other packages from the <code>tidyverse</code>, were designed to work well together because they share a common “grammar” and philosophy. The most important principle of <code>dplyr</code> is that all functions within the package take a <code>data.frame</code> as input and return a <code>data.frame as output</code>. This simple consistency makes it possible to reason about what different functions might be doing with data. More importantly, it means that once you learn one function, you can learn other functions with relative ease.</p>
+<p>I would encourage you to read <a href="http://r4ds.had.co.nz/index.html"><em>R for Data Science</em></a> if you want to dive deeper in to the philosophy of data science from the <code>tidyverse</code> perspective.</p>
+</div>
+<div id="dplyr-verbs" class="section level3">
+<h3>dplyr Verbs</h3>
+<p>Below, you will find 3 topics that I think are the most important aspects of <code>dplyr</code>:</p>
+<ul>
+<li>Single-table verbs</li>
+<li>Summary and grouping functions</li>
+<li>Two-table verbs</li>
+</ul>
+<p>Single table verbs will help you slice and dice and create new variables in your data. I’ve focused on the 5 most common and most widely-used single-table verbs. Summary verbs help you create useful summaries of your data quickly and help you make these summaries according to groups. Two-table verbs help you systematically merge two datasets and make it clear what the result of your merge will look like.</p>
+<p>The functions described below are the main workhorse functions in <code>dplyr</code> but there are many others. I would encourage you to visit the <a href="http://dplyr.tidyverse.org/"><code>dplyr</code></a> website to see more tutorials and a complete function reference.</p>
+</div>
+<div id="setup-example-data" class="section level3">
+<h3>Setup &amp; Example Data</h3>
+<p>Below is the code needed to set up our R session. We’ll need dplyr from the tidyverse package (you can also do <code>library(dplyr)</code>). I prefer to load the tidyverse package because it automatically loads a number of useful packages in a single line of code. We also need the psych package in order to grab the data we need. If you don’t have it run <code>install.packages("psych")</code>.</p>
+<pre class="r"><code># Load packages
+library(tidyverse) 
+library(psych)
+library(psychTools)
+
+# Datasets from the psych package
+data(&quot;bfi&quot;)
+data(&quot;bfi.dictionary&quot;)
+
+# Convert datasets to tibbles
+bfi &lt;- as_tibble(bfi)</code></pre>
+<p>This dataset is a sample of 2,800 observations for which 25 personality self report items were collected from the International Personality Item Pool (<a href="ipip.ori.org">IPIP</a>) as a part of the SAPA (see the psych package description of for more details).</p>
+<p>To get a sense for these data, we can use <code>glimpse()</code> from <code>dplyr</code> to print out the dimensions of the dataset, the variables and their types, and the first few observations of each variable.</p>
+<div id="bfi-data" class="section level4">
+<h4>bfi data</h4>
+<pre class="r"><code>glimpse(bfi)</code></pre>
+<pre><code>## Rows: 2,800
+## Columns: 28
+## $ A1        &lt;int&gt; 2, 2, 5, 4, 2, 6, 2, 4, 4, 2, 4, 2, 5, 5, 4, 4, 4, 5, 4, 4,…
+## $ A2        &lt;int&gt; 4, 4, 4, 4, 3, 6, 5, 3, 3, 5, 4, 5, 5, 5, 5, 3, 6, 5, 4, 4,…
+## $ A3        &lt;int&gt; 3, 5, 5, 6, 3, 5, 5, 1, 6, 6, 5, 5, 5, 5, 2, 6, 6, 5, 5, 6,…
+## $ A4        &lt;int&gt; 4, 2, 4, 5, 4, 6, 3, 5, 3, 6, 6, 5, 6, 6, 2, 6, 2, 4, 4, 5,…
+## $ A5        &lt;int&gt; 4, 5, 4, 5, 5, 5, 5, 1, 3, 5, 5, 5, 4, 6, 1, 3, 5, 5, 3, 5,…
+## $ C1        &lt;int&gt; 2, 5, 4, 4, 4, 6, 5, 3, 6, 6, 4, 5, 5, 4, 5, 5, 4, 5, 5, 1,…
+## $ C2        &lt;int&gt; 3, 4, 5, 4, 4, 6, 4, 2, 6, 5, 3, 4, 4, 4, 5, 5, 4, 5, 4, 1,…
+## $ C3        &lt;int&gt; 3, 4, 4, 3, 5, 6, 4, 4, 3, 6, 5, 5, 3, 4, 5, 5, 4, 5, 5, 1,…
+## $ C4        &lt;int&gt; 4, 3, 2, 5, 3, 1, 2, 2, 4, 2, 3, 4, 2, 2, 2, 3, 4, 4, 4, 5,…
+## $ C5        &lt;int&gt; 4, 4, 5, 5, 2, 3, 3, 4, 5, 1, 2, 5, 2, 1, 2, 5, 4, 3, 6, 6,…
+## $ E1        &lt;int&gt; 3, 1, 2, 5, 2, 2, 4, 3, 5, 2, 1, 3, 3, 2, 3, 1, 1, 2, 1, 1,…
+## $ E2        &lt;int&gt; 3, 1, 4, 3, 2, 1, 3, 6, 3, 2, 3, 3, 3, 2, 4, 1, 2, 2, 2, 1,…
+## $ E3        &lt;int&gt; 3, 6, 4, 4, 5, 6, 4, 4, NA, 4, 2, 4, 3, 4, 3, 6, 5, 4, 4, 4…
+## $ E4        &lt;int&gt; 4, 4, 4, 4, 4, 5, 5, 2, 4, 5, 5, 5, 2, 6, 6, 6, 5, 6, 5, 5,…
+## $ E5        &lt;int&gt; 4, 3, 5, 4, 5, 6, 5, 1, 3, 5, 4, 4, 4, 5, 5, 4, 5, 6, 5, 6,…
+## $ N1        &lt;int&gt; 3, 3, 4, 2, 2, 3, 1, 6, 5, 5, 3, 4, 1, 1, 2, 4, 4, 6, 5, 5,…
+## $ N2        &lt;int&gt; 4, 3, 5, 5, 3, 5, 2, 3, 5, 5, 3, 5, 2, 1, 4, 5, 4, 5, 6, 5,…
+## $ N3        &lt;int&gt; 2, 3, 4, 2, 4, 2, 2, 2, 2, 5, 4, 3, 2, 1, 2, 4, 4, 5, 5, 5,…
+## $ N4        &lt;int&gt; 2, 5, 2, 4, 4, 2, 1, 6, 3, 2, 2, 2, 2, 2, 2, 5, 4, 4, 5, 1,…
+## $ N5        &lt;int&gt; 3, 5, 3, 1, 3, 3, 1, 4, 3, 4, 3, NA, 2, 1, 3, 5, 5, 4, 2, 1…
+## $ O1        &lt;int&gt; 3, 4, 4, 3, 3, 4, 5, 3, 6, 5, 5, 4, 4, 5, 5, 6, 5, 5, 4, 4,…
+## $ O2        &lt;int&gt; 6, 2, 2, 3, 3, 3, 2, 2, 6, 1, 3, 6, 2, 3, 2, 6, 1, 1, 2, 1,…
+## $ O3        &lt;int&gt; 3, 4, 5, 4, 4, 5, 5, 4, 6, 5, 5, 4, 4, 4, 5, 6, 5, 4, 2, 5,…
+## $ O4        &lt;int&gt; 4, 3, 5, 3, 3, 6, 6, 5, 6, 5, 6, 5, 5, 4, 5, 3, 6, 5, 4, 3,…
+## $ O5        &lt;int&gt; 3, 3, 2, 5, 3, 1, 1, 3, 1, 2, 3, 4, 2, 4, 5, 2, 3, 4, 2, 2,…
+## $ gender    &lt;int&gt; 1, 2, 2, 2, 1, 2, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 2, 1, 2, 2,…
+## $ education &lt;int&gt; NA, NA, NA, NA, NA, 3, NA, 2, 1, NA, 1, NA, NA, NA, 1, NA, …
+## $ age       &lt;int&gt; 16, 18, 17, 17, 17, 21, 18, 19, 19, 17, 21, 16, 16, 16, 17,…</code></pre>
+</div>
+</div>
+<div id="single-table-verbs" class="section level3">
+<h3>Single Table Verbs</h3>
+<p>The first set of <code>dplyr</code> verbs that we will talk about and use are single-table verbs. Single-table operations are the most common and widely used verbs used in data manipulation. When I say “data manipulation”, I am referring to:</p>
+<ul>
+<li>selecting the relevant columns from a larger dataset (i.e. variables)</li>
+<li>renaming variables with more useful labels</li>
+<li>filtering the relevant rows (i.e. observations or cases) to the ones you want to analyze</li>
+<li>arranging or sorting the observations in ways that help you inspect your data</li>
+<li>creating new variables based on existing variables (e.g. creating scale scores from a set of items).</li>
+</ul>
+<p>These operations are likely very familiar to you but, at least in my beginning experiences with R, it was not always clear how they were executed in R. On top of this issue, it wasn’t clear to me that this process was or could be systematic. <code>dplyr</code> makes these operations more explicit and helps you think about how to do such operations systematically. In fact, the so-called 5 most important verbs of <code>dplyr</code>do exactly what they sound like:</p>
+<table class="bordered">
+<thead>
+<tr>
+<th style="text-align:left;">
+function
+</th>
+<th style="text-align:left;">
+description
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+<code>select()</code>
+</td>
+<td style="text-align:left;">
+Select relevant columns of your data
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+<code>rename()</code>
+</td>
+<td style="text-align:left;">
+Rename the columns of your data
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+<code>filter()</code>
+</td>
+<td style="text-align:left;">
+Filter your data according to logical statements
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+<code>arrange()</code>
+</td>
+<td style="text-align:left;">
+Sort your data on a certain column, ascending or descending
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+<code>mutate()</code>
+</td>
+<td style="text-align:left;">
+Create new variables and add them to your dataset
+</td>
+</tr>
+</tbody>
+</table>
+<p>Below are some examples of ways that I use these verbs in my work:</p>
+<div id="select" class="section level4">
+<h4>Select</h4>
+<p>Selecting variables is probably one of the most powerful dplyr operations. All that you need to do in order to select variables in a dataset is simply write out thier names (unquoted), like so: <code>select(data,var1,var2,var3)</code>. This code will select var1,var2, and var3 from the dataset data and give you a new dataset that only contains those columns.</p>
+<p>You can also “deselect” columns. For example, let’s say you didn’t want var1,var2, and var3 in your data but you wanted to keep everything else. Simply write the following code: <code>select(data,-var1,-var2,-var3)</code>. The <code>-</code> will drop those columns and give all other columns in your data.</p>
+<p>You can also do more complicated things (see below). For example, you can select all columns that have a particular prefix, suffix, or contain a particular word or certain letter sequences. Take a look at the example:</p>
+<div id="example" class="section level5">
+<h5>Example</h5>
+<p>First, because I am not terribly familiar with the BFI dataset from the psych package, I want to figure out which variables I actually need to look at personality. Luckily, the psych package provides a <code>bfi.dictionary</code> for this exact purpose.</p>
+<pre class="r"><code>bfi.dictionary %&gt;% 
+  rownames_to_column() %&gt;% 
+  rename(bfi_item = rowname) %&gt;% 
+  as_tibble()</code></pre>
+<pre><code>## # A tibble: 28 x 8
+##    bfi_item ItemLabel Item            Giant3  Big6      Little12  Keying IPIP100
+##    &lt;chr&gt;    &lt;fct&gt;     &lt;fct&gt;           &lt;fct&gt;   &lt;fct&gt;     &lt;fct&gt;      &lt;int&gt; &lt;fct&gt;  
+##  1 A1       q_146     Am indifferent… Cohesi… Agreeabl… Compassi…     -1 B5:A   
+##  2 A2       q_1162    Inquire about … Cohesi… Agreeabl… Compassi…      1 B5:A   
+##  3 A3       q_1206    Know how to co… Cohesi… Agreeabl… Compassi…      1 B5:A   
+##  4 A4       q_1364    Love children.  Cohesi… Agreeabl… Compassi…      1 B5:A   
+##  5 A5       q_1419    Make people fe… Cohesi… Agreeabl… Compassi…      1 B5:A   
+##  6 C1       q_124     Am exacting in… Stabil… Conscien… Orderlin…      1 B5:C   
+##  7 C2       q_530     Continue until… Stabil… Conscien… Orderlin…      1 B5:C   
+##  8 C3       q_619     Do things acco… Stabil… Conscien… Orderlin…      1 B5:C   
+##  9 C4       q_626     Do things in a… Stabil… Conscien… Industri…     -1 B5:C   
+## 10 C5       q_1949    Waste my time.  Stabil… Conscien… Industri…     -1 B5:C   
+## # … with 18 more rows</code></pre>
+<p>After searching throught the codebook, I was able to deduce that all the personality variables have capital letter prefix for the trait that they measure with a trailing digit indicating the item number. Now I can quickly select subsets of these items depending on my needs.</p>
+</div>
+<div id="select-by-variable-name" class="section level5">
+<h5>Select by variable name</h5>
+<p>Let’s say I just want to select a couple variables. This is the most straightforward way to use select. For example, I can select gender, age, and the 5 items that measure Agreeableness like so:</p>
+<pre class="r"><code># Spell out the variables you want to select
+bfi %&gt;% select(gender, age, A1, A2, A3, A4, A5)</code></pre>
+<pre><code>## # A tibble: 2,800 x 7
+##    gender   age    A1    A2    A3    A4    A5
+##     &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1      1    16     2     4     3     4     4
+##  2      2    18     2     4     5     2     5
+##  3      2    17     5     4     5     4     4
+##  4      2    17     4     4     6     5     5
+##  5      1    17     2     3     3     4     5
+##  6      2    21     6     6     5     6     5
+##  7      1    18     2     5     5     3     5
+##  8      1    19     4     3     1     5     1
+##  9      1    19     4     3     6     3     3
+## 10      2    17     2     5     6     6     5
+## # … with 2,790 more rows</code></pre>
+<p>Alternatively, let’s say I want everything but gender, age, and education:</p>
+<pre class="r"><code># select everything but gender, age, and education 
+bfi %&gt;% select(-gender, -age, -education) </code></pre>
+<pre><code>## # A tibble: 2,800 x 25
+##       A1    A2    A3    A4    A5    C1    C2    C3    C4    C5    E1    E2    E3
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1     2     4     3     4     4     2     3     3     4     4     3     3     3
+##  2     2     4     5     2     5     5     4     4     3     4     1     1     6
+##  3     5     4     5     4     4     4     5     4     2     5     2     4     4
+##  4     4     4     6     5     5     4     4     3     5     5     5     3     4
+##  5     2     3     3     4     5     4     4     5     3     2     2     2     5
+##  6     6     6     5     6     5     6     6     6     1     3     2     1     6
+##  7     2     5     5     3     5     5     4     4     2     3     4     3     4
+##  8     4     3     1     5     1     3     2     4     2     4     3     6     4
+##  9     4     3     6     3     3     6     6     3     4     5     5     3    NA
+## 10     2     5     6     6     5     6     5     6     2     1     2     2     4
+## # … with 2,790 more rows, and 12 more variables: E4 &lt;int&gt;, E5 &lt;int&gt;, N1 &lt;int&gt;,
+## #   N2 &lt;int&gt;, N3 &lt;int&gt;, N4 &lt;int&gt;, N5 &lt;int&gt;, O1 &lt;int&gt;, O2 &lt;int&gt;, O3 &lt;int&gt;,
+## #   O4 &lt;int&gt;, O5 &lt;int&gt;</code></pre>
+<p>Or, what if you know you just want the first few columns of the dataset and you don’t want to type their names?</p>
+<pre class="r"><code># select the first 5 colunmns
+bfi %&gt;% select(1:5) </code></pre>
+<pre><code>## # A tibble: 2,800 x 5
+##       A1    A2    A3    A4    A5
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1     2     4     3     4     4
+##  2     2     4     5     2     5
+##  3     5     4     5     4     4
+##  4     4     4     6     5     5
+##  5     2     3     3     4     5
+##  6     6     6     5     6     5
+##  7     2     5     5     3     5
+##  8     4     3     1     5     1
+##  9     4     3     6     3     3
+## 10     2     5     6     6     5
+## # … with 2,790 more rows</code></pre>
+</div>
+<div id="select-by-string-matches" class="section level5">
+<h5>Select by string matches</h5>
+<p>Using select with variable names is powerful but can involve a lot of typing if you need to select many variables. An even more powerful way to select is to utilize “select helpers”. These include (descriptions from <code>select_helpers</code> help page):</p>
+<ul>
+<li><code>starts_with()</code>: Starts with a prefix.</li>
+<li><code>ends_with()</code>: Ends with a suffix.</li>
+<li><code>contains()</code>: Contains a literal string.</li>
+<li><code>num_range()</code>: Matches a numerical range like x01, x02, x03.</li>
+<li><code>one_of()</code>: Matches variable names in a character vector.</li>
+<li><code>matches()</code>: Matches a regular expression.</li>
+<li><code>everything()</code>: Matches all variables.</li>
+<li><code>last_col()</code>: Select last variable, possibly with an offset.</li>
+</ul>
+<p>I use <code>starts_with()</code>, <code>ends_with()</code>, and <code>contains()</code> most frequently. However, <code>matches()</code> is the most powerful as it allows you to leverage regular expressions. A full discussion of regular experssions is beyond the scope of this post. In brief, regular expressions allow you to do complex string pattern matching.</p>
+</div>
+<div id="examples" class="section level5">
+<h5>Examples</h5>
+<p>For the following examples, I will be printing out the results of using different <code>select_helpers</code>. Note that I am going to print out column names (with <code>names()</code>) rather than the whole dataset for brevity.</p>
+<p><strong><code>starts_with()</code>:</strong> Let’s say we only want Conscientiousness items:</p>
+<pre class="r"><code>bfi %&gt;% select(starts_with(&quot;C&quot;)) %&gt;% names()</code></pre>
+<pre><code>## [1] &quot;C1&quot; &quot;C2&quot; &quot;C3&quot; &quot;C4&quot; &quot;C5&quot;</code></pre>
+<p><strong><code>ends_with()</code>:</strong> how about the first item of each scale?:</p>
+<pre class="r"><code>bfi %&gt;% select(ends_with(&quot;1&quot;)) %&gt;% names()</code></pre>
+<pre><code>## [1] &quot;A1&quot; &quot;C1&quot; &quot;E1&quot; &quot;N1&quot; &quot;O1&quot;</code></pre>
+<p><strong><code>contains()</code>:</strong> how about all the Openness items?:</p>
+<pre class="r"><code>bfi %&gt;% select(contains(&quot;O&quot;)) %&gt;% names()</code></pre>
+<pre><code>## [1] &quot;O1&quot;        &quot;O2&quot;        &quot;O3&quot;        &quot;O4&quot;        &quot;O5&quot;        &quot;education&quot;</code></pre>
+<p>Note that in this case <code>contains()</code> wasn’t great because education contains an “o”. We can fix that by specifying we want a capitol “O”.</p>
+<pre class="r"><code>bfi %&gt;% select(contains(&quot;O&quot;, ignore.case = F)) %&gt;% names()</code></pre>
+<pre><code>## [1] &quot;O1&quot; &quot;O2&quot; &quot;O3&quot; &quot;O4&quot; &quot;O5&quot;</code></pre>
+<p><strong><code>num_range()</code>:</strong> how about the last three items of Emotional Stability?:</p>
+<pre class="r"><code>bfi %&gt;% select(num_range(prefix = &quot;N&quot;, 3:5)) %&gt;% names()</code></pre>
+<pre><code>## [1] &quot;N3&quot; &quot;N4&quot; &quot;N5&quot;</code></pre>
+<p><strong><code>one_of()</code>:</strong> Let’s say you wanted the last item of Emotional Stabilty but you weren’t sure if there is 5 or 6 items:</p>
+<pre class="r"><code>bfi %&gt;% select(one_of(&quot;N5&quot;,&quot;N6&quot;)) %&gt;% names()</code></pre>
+<pre><code>## Warning: Unknown columns: `N6`</code></pre>
+<pre><code>## [1] &quot;N5&quot;</code></pre>
+<p><strong><code>matches()</code>:</strong> Let’s do something more complicated. How about finding all of the Conscientiousness items, the last 2 items of Emotional Stability, and the first three items of Openness?</p>
+<pre class="r"><code>bfi %&gt;% select(matches(&quot;^O[1-3]|^N[4-5]|^C&quot;)) %&gt;% names()</code></pre>
+<pre><code>##  [1] &quot;C1&quot; &quot;C2&quot; &quot;C3&quot; &quot;C4&quot; &quot;C5&quot; &quot;N4&quot; &quot;N5&quot; &quot;O1&quot; &quot;O2&quot; &quot;O3&quot;</code></pre>
+</div>
+</div>
+<div id="rename" class="section level4">
+<h4>Rename</h4>
+<p>Renaming variables is pretty simply in dplyr. Simply type <code>rename(data, new.name.1 = old.name.1,new.name.2 = old.name.2)</code>. Here, you provide a new name (e.g. <code>new.name.1</code>) and set it equal to the old name in the data (e.g. <code>old.name.1</code>). See the example to see how <code>rename()</code> works.</p>
+<p>Note: that the more complicated examples are there to inspire you to learn how to systematically and programatically change many variables all at once.</p>
+<div id="examples-1" class="section level5">
+<h5>Examples</h5>
+<pre class="r"><code># Old names
+names(bfi)</code></pre>
+<pre><code>##  [1] &quot;A1&quot;        &quot;A2&quot;        &quot;A3&quot;        &quot;A4&quot;        &quot;A5&quot;        &quot;C1&quot;       
+##  [7] &quot;C2&quot;        &quot;C3&quot;        &quot;C4&quot;        &quot;C5&quot;        &quot;E1&quot;        &quot;E2&quot;       
+## [13] &quot;E3&quot;        &quot;E4&quot;        &quot;E5&quot;        &quot;N1&quot;        &quot;N2&quot;        &quot;N3&quot;       
+## [19] &quot;N4&quot;        &quot;N5&quot;        &quot;O1&quot;        &quot;O2&quot;        &quot;O3&quot;        &quot;O4&quot;       
+## [25] &quot;O5&quot;        &quot;gender&quot;    &quot;education&quot; &quot;age&quot;</code></pre>
+<p>Rename just a couple of variables:</p>
+<pre class="r"><code># Simple rename
+bfi %&gt;% 
+  rename(Agreeableness_1 = A1, Agreeableness_2 = A2) %&gt;% 
+  names()</code></pre>
+<pre><code>##  [1] &quot;Agreeableness_1&quot; &quot;Agreeableness_2&quot; &quot;A3&quot;              &quot;A4&quot;             
+##  [5] &quot;A5&quot;              &quot;C1&quot;              &quot;C2&quot;              &quot;C3&quot;             
+##  [9] &quot;C4&quot;              &quot;C5&quot;              &quot;E1&quot;              &quot;E2&quot;             
+## [13] &quot;E3&quot;              &quot;E4&quot;              &quot;E5&quot;              &quot;N1&quot;             
+## [17] &quot;N2&quot;              &quot;N3&quot;              &quot;N4&quot;              &quot;N5&quot;             
+## [21] &quot;O1&quot;              &quot;O2&quot;              &quot;O3&quot;              &quot;O4&quot;             
+## [25] &quot;O5&quot;              &quot;gender&quot;          &quot;education&quot;       &quot;age&quot;</code></pre>
+<p>Rename a set of variables using a <code>rename_at()</code> (combination of select and rename):</p>
+<pre class="r"><code># More complicated rename
+bfi %&gt;% 
+  rename_at(vars(matches(&quot;^A\\d&quot;)), funs(paste0(&quot;Agreeableness_&quot;,1:5))) %&gt;% 
+  names()</code></pre>
+<pre><code>## Warning: `funs()` is deprecated as of dplyr 0.8.0.
+## Please use a list of either functions or lambdas: 
+## 
+##   # Simple named list: 
+##   list(mean = mean, median = median)
+## 
+##   # Auto named with `tibble::lst()`: 
+##   tibble::lst(mean, median)
+## 
+##   # Using lambdas
+##   list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_warnings()` to see where this warning was generated.</code></pre>
+<pre><code>##  [1] &quot;Agreeableness_1&quot; &quot;Agreeableness_2&quot; &quot;Agreeableness_3&quot; &quot;Agreeableness_4&quot;
+##  [5] &quot;Agreeableness_5&quot; &quot;C1&quot;              &quot;C2&quot;              &quot;C3&quot;             
+##  [9] &quot;C4&quot;              &quot;C5&quot;              &quot;E1&quot;              &quot;E2&quot;             
+## [13] &quot;E3&quot;              &quot;E4&quot;              &quot;E5&quot;              &quot;N1&quot;             
+## [17] &quot;N2&quot;              &quot;N3&quot;              &quot;N4&quot;              &quot;N5&quot;             
+## [21] &quot;O1&quot;              &quot;O2&quot;              &quot;O3&quot;              &quot;O4&quot;             
+## [25] &quot;O5&quot;              &quot;gender&quot;          &quot;education&quot;       &quot;age&quot;</code></pre>
+<pre class="r"><code>labels &lt;- bfi.dictionary %&gt;% filter(str_detect(ItemLabel,&quot;\\d$&quot;)) %&gt;% pull(Big6) %&gt;% as.character
+
+# Even more complicated rename
+bfi %&gt;% 
+  rename_at(vars(matches(&quot;\\d$&quot;)), funs(str_replace(.,&quot;^[[:upper:]]&quot;,labels))) %&gt;% 
+  names()</code></pre>
+<pre><code>##  [1] &quot;Agreeableness1&quot;       &quot;Agreeableness2&quot;       &quot;Agreeableness3&quot;      
+##  [4] &quot;Agreeableness4&quot;       &quot;Agreeableness5&quot;       &quot;Conscientiousness1&quot;  
+##  [7] &quot;Conscientiousness2&quot;   &quot;Conscientiousness3&quot;   &quot;Conscientiousness4&quot;  
+## [10] &quot;Conscientiousness5&quot;   &quot;Extraversion1&quot;        &quot;Extraversion2&quot;       
+## [13] &quot;Extraversion3&quot;        &quot;Extraversion4&quot;        &quot;Extraversion5&quot;       
+## [16] &quot;Emotional Stability1&quot; &quot;Emotional Stability2&quot; &quot;Emotional Stability3&quot;
+## [19] &quot;Emotional Stability4&quot; &quot;Emotional Stability5&quot; &quot;Openness1&quot;           
+## [22] &quot;Openness2&quot;            &quot;Openness3&quot;            &quot;Openness4&quot;           
+## [25] &quot;Openness5&quot;            &quot;gender&quot;               &quot;education&quot;           
+## [28] &quot;age&quot;</code></pre>
+</div>
+</div>
+<div id="arrange" class="section level4">
+<h4>Arrange</h4>
+<p>Arranging columns is also very straight forward. Simply indicate which variable you want to use to arrange the data: <code>arrange(data,column.to.arrange.by)</code>. You can specify a column wrapped in <code>desc()</code> to have it ordered in descending order instead.</p>
+<div id="example-1" class="section level5">
+<h5>Example</h5>
+<pre class="r"><code>bfi %&gt;% arrange(age)</code></pre>
+<pre><code>## # A tibble: 2,800 x 28
+##       A1    A2    A3    A4    A5    C1    C2    C3    C4    C5    E1    E2    E3
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1     2     5     5     4     5     5     3     5     2     4     2     5     5
+##  2     1     4     5    NA     5     4     1     6     5     3     1     1    NA
+##  3     1     6     6     6     6     5     6     5     1     1     1     1     5
+##  4     1     6     6     6     5     2     5     5     5     2     1     1     5
+##  5    NA     6     4    NA     4     4    NA     6    NA     1     1     5    NA
+##  6     1     6     6     5     2     4     2     2     5     4     6     1     5
+##  7     4     4     2     4     4     4     4     4     3     4     3     5     2
+##  8     2     5     3     2     2     4     2     5     5     5     6     6     4
+##  9     1     6     6     6     6     6     6     6     1     1     1     1     6
+## 10     4     5     5     4     2     2     2     4     3     1     5     5     2
+## # … with 2,790 more rows, and 15 more variables: E4 &lt;int&gt;, E5 &lt;int&gt;, N1 &lt;int&gt;,
+## #   N2 &lt;int&gt;, N3 &lt;int&gt;, N4 &lt;int&gt;, N5 &lt;int&gt;, O1 &lt;int&gt;, O2 &lt;int&gt;, O3 &lt;int&gt;,
+## #   O4 &lt;int&gt;, O5 &lt;int&gt;, gender &lt;int&gt;, education &lt;int&gt;, age &lt;int&gt;</code></pre>
+<pre class="r"><code>bfi %&gt;% arrange(desc(age))</code></pre>
+<pre><code>## # A tibble: 2,800 x 28
+##       A1    A2    A3    A4    A5    C1    C2    C3    C4    C5    E1    E2    E3
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1     1     3     4     4     4     4     1     5     3     2     6     2     1
+##  2     4     3     1     1     5     6     6     4     1     1     6     2     6
+##  3     1     6     6     4     6     2     4     4     1     2     2     1     6
+##  4     2     4     5     6     6     5     3     5     2     2     2     4     4
+##  5     1     5     6     5     6     4     3     2     4     5     2     1     2
+##  6     2     4     4     3     4     3     2     3     4     6     6     5     4
+##  7     2     4     4     4     4     5     5     4     1     2     4     4     4
+##  8     1     4     3     6     5     5     4     2     4     5     5     5     1
+##  9     2     6     6     6     5     5     5     5     1     3     2     2     5
+## 10     5     4     2     6     4     5     6     4     2     5     1     6     4
+## # … with 2,790 more rows, and 15 more variables: E4 &lt;int&gt;, E5 &lt;int&gt;, N1 &lt;int&gt;,
+## #   N2 &lt;int&gt;, N3 &lt;int&gt;, N4 &lt;int&gt;, N5 &lt;int&gt;, O1 &lt;int&gt;, O2 &lt;int&gt;, O3 &lt;int&gt;,
+## #   O4 &lt;int&gt;, O5 &lt;int&gt;, gender &lt;int&gt;, education &lt;int&gt;, age &lt;int&gt;</code></pre>
+</div>
+</div>
+<div id="filter" class="section level4">
+<h4>Filter</h4>
+<p>Filtering data is an operation that you will undoubtedly need to use all the time. You filter data anytime you need to create some subset of a larger data set. To perform this operation you need to supply <code>filter()</code> with a logical expression. This expression will be applied to the dataset and only rows that meet your criteria (i.e. evaluate to <code>TRUE</code> after your logical expression), will be kept. Take a look at the example:</p>
+<div id="example-2" class="section level5">
+<h5>Example</h5>
+<p>This dataset is pretty big (N = 2800). I might want to use everyone in this dataset but it’s reasonable to see how certain research questions may not require the entire sample. For example, maybe I only want to look at adults who are younger than 65. This could be because 65 and younger adults are likely not retired, or maybe after 40 is a meaningful cutoff for certain questions.</p>
+<p>Whatever the case, you can quickly subset your data using <code>filter()</code>. Below I use the expression <code>Age &lt; 40</code> inside my call to <code>filter()</code>. This expression will help <code>filter()</code> figure out which individuals are younger than 65 and only keep those individuals.</p>
+<pre class="r"><code>bfi %&gt;% 
+  filter(age &lt;= 40) %&gt;% 
+  select(age,everything()) %&gt;% 
+  arrange(desc(age))</code></pre>
+<pre><code>## # A tibble: 2,358 x 28
+##      age    A1    A2    A3    A4    A5    C1    C2    C3    C4    C5    E1    E2
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1    40     1     5     5     6     5     4     4     4     3     4     4     3
+##  2    40     1     5     5     5     2     6    NA     6     1     1     3     2
+##  3    40     1     5    NA     5     6     6     6     1     1     1     6     1
+##  4    40     1     6     4     6     6     5     4     5     1     2     5     1
+##  5    40     4     4     4    NA     5     4     4     4    NA     3     4     2
+##  6    40     1     5     5     6     5     5     4     4     4     4     1     2
+##  7    40     3     5     5     6     5     5     4     5     2     3     2     4
+##  8    40     3     6     5     6     6     5     6     5     1     3     1     2
+##  9    40     1     6     6     6     6     1     5     6     1     1     1     6
+## 10    40     1     6     4     6     6     5     6     4     3     4     3     2
+## # … with 2,348 more rows, and 15 more variables: E3 &lt;int&gt;, E4 &lt;int&gt;, E5 &lt;int&gt;,
+## #   N1 &lt;int&gt;, N2 &lt;int&gt;, N3 &lt;int&gt;, N4 &lt;int&gt;, N5 &lt;int&gt;, O1 &lt;int&gt;, O2 &lt;int&gt;,
+## #   O3 &lt;int&gt;, O4 &lt;int&gt;, O5 &lt;int&gt;, gender &lt;int&gt;, education &lt;int&gt;</code></pre>
+</div>
+</div>
+<div id="mutate" class="section level4">
+<h4>Mutate</h4>
+<p>Mutate is the final (mainstream) verb among the single-table dplyr verbs. It’s a little more complicated than the others but I still think it’s intuitive. The point of <code>mutate()</code> is to create new variables based on existing variables and add them to your data.</p>
+<p>To use <code>mutate()</code> simply give your new variable a name followed by an <code>=</code>. Then, express how you want to calculate your new variable. See below for examples:</p>
+<div id="example-3" class="section level5">
+<h5>Example</h5>
+<p>To see how <code>mutate()</code> works, let’s create composite scores for each personality trait.</p>
+<pre class="r"><code>bfi %&gt;% 
+  rowwise() %&gt;% # make sure to calculate means across rows not columns
+  mutate(
+    Neuroticism       = mean(c(A1,A2,A3,A4,A5),na.rm=T),
+    Extraversion      = mean(c(C1,C2,C3,C4,C5),na.rm=T),
+    Openness          = mean(c(E1,E2,E3,E4,E5),na.rm=T),
+    Conscientiousness = mean(c(N1,N2,N3,N4,N5),na.rm=T),
+    Agreeableness     = mean(c(O1,O2,O3,O4,O5),na.rm=T)
+  ) %&gt;% 
+  select(Neuroticism, Extraversion, Openness, Conscientiousness, Agreeableness)</code></pre>
+<pre><code>## # A tibble: 2,800 x 5
+## # Rowwise: 
+##    Neuroticism Extraversion Openness Conscientiousness Agreeableness
+##          &lt;dbl&gt;        &lt;dbl&gt;    &lt;dbl&gt;             &lt;dbl&gt;         &lt;dbl&gt;
+##  1         3.4          3.2     3.4                2.8           3.8
+##  2         3.6          4       3                  3.8           3.2
+##  3         4.4          4       3.8                3.6           3.6
+##  4         4.8          4.2     4                  2.8           3.6
+##  5         3.4          3.6     3.6                3.2           3.2
+##  6         5.6          4.4     4                  3             3.8
+##  7         4            3.6     4.2                1.4           3.8
+##  8         2.8          3       3.2                4.2           3.4
+##  9         3.8          4.8     3.75               3.6           5  
+## 10         4.8          4       3.6                4.2           3.6
+## # … with 2,790 more rows</code></pre>
+</div>
+</div>
+<div id="putting-it-all-together" class="section level4">
+<h4>Putting it all together</h4>
+<p>Now that you have been introduced to the most important single-table dplyr verbs, let’s see how we might complete all of these steps in a single chain of function calls:</p>
+<pre class="r"><code>bfi %&gt;% 
+  filter(age &lt;= 40) %&gt;% 
+  rowwise() %&gt;% 
+  mutate(Neuroticism       = mean(c(A1,A2,A3,A4,A5),na.rm=T),
+         Extraversion      = mean(c(C1,C2,C3,C4,C5),na.rm=T),
+         Openness          = mean(c(E1,E2,E3,E4,E5),na.rm=T),
+         Conscientiousness = mean(c(N1,N2,N3,N4,N5),na.rm=T),
+         Agreeableness     = mean(c(O1,O2,O3,O4,O5),na.rm=T)) %&gt;% 
+  select(age,education,gender,Neuroticism, Extraversion, Openness, Conscientiousness, Agreeableness) %&gt;% 
+  rename_all(tolower) %&gt;% 
+  arrange(desc(age))</code></pre>
+<pre><code>## # A tibble: 2,358 x 8
+## # Rowwise: 
+##      age education gender neuroticism extraversion openness conscientiousne…
+##    &lt;int&gt;     &lt;int&gt;  &lt;int&gt;       &lt;dbl&gt;        &lt;dbl&gt;    &lt;dbl&gt;            &lt;dbl&gt;
+##  1    40         3      2        4.4          3.8      3.8              2.6 
+##  2    40         5      2        3.6          3.5      2.8              4.25
+##  3    40         3      2        4.25         3        2.8              2   
+##  4    40         3      1        4.6          3.4      4.2              1.4 
+##  5    40         5      2        4.25         3.75     3.75             4   
+##  6    40         1      2        4.4          4.2      3.4              4.4 
+##  7    40         3      2        4.8          3.8      3.8              4.6 
+##  8    40         2      2        5.2          4        4                2.6 
+##  9    40         3      2        5            2.8      3.6              1.6 
+## 10    40         3      2        4.6          4.4      3.6              5.8 
+## # … with 2,348 more rows, and 1 more variable: agreeableness &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<div id="summarizing-and-grouping" class="section level3">
+<h3>Summarizing and Grouping</h3>
+<p>Summarizing data can be tedious. It involves taking raw data and turning those data into useful summary statistics (e.g. means, standard deviations, minimum and maximun values, ranges, etc.). Furthermore, it’s often useful to create such summaries within subgroups. For example, you may want to create summary values for each condition of an experiment or some other grouping variable.</p>
+<p><code>dplyr</code> has a set of functions that specifically handle these operations and make it very easy and systematic to create the summaries you want to create.</p>
+<div id="summarize" class="section level4">
+<h4>Summarize</h4>
+<p>Summarizing in dplyr works the same way as <code>mutate()</code>. Using the function <code>summarize()</code>, we can specify a data set we want to summarize, give the name of the summary variable we want to create, and then a specific operation to perform. For example, if we wanted to find the mean of a single variable in a dataset we might write <code>summarize(data, summary.variable = mean(var1))</code>. The result of this function will be a single value: the mean of <code>var1</code>.</p>
+<div id="example---simple-summaries" class="section level5">
+<h5>Example - Simple Summaries</h5>
+<p>Here, I want to know, for the whole dataset, what the mean, median, standard deviation, minimun and maximum ages in the BFI dataset.</p>
+<pre class="r"><code>bfi %&gt;% 
+  summarize(
+    mean    = mean(age,na.rm=T),
+    median  = median(age,na.rm=T),
+    sd      = sd(age,na.rm=T),
+    min     = min(age,na.rm=T),
+    max     = max(age,na.rm=T)
+)</code></pre>
+<pre><code>## # A tibble: 1 x 5
+##    mean median    sd   min   max
+##   &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;int&gt;
+## 1  28.8     26  11.1     3    86</code></pre>
+</div>
+</div>
+<div id="group-by" class="section level4">
+<h4>Group By</h4>
+<p>The power of <code>summarize()</code> becomes much greater when you use it in conjunction with <code>group_by()</code>. The point of <code>group_by()</code> is to group data into categories and perform operations on them. For example, maybe we want to know the mean of a particular variable but within a particular group category. We might right <code>group_by(data, grouping.variable) %&gt;% summarize(mean = mean(var1))</code>. This will become more clear in the example below:</p>
+<div id="example---grouped-summaries" class="section level5">
+<h5>Example - Grouped Summaries</h5>
+<p>To see the utility of <code>group_by()</code> and <code>summarize()</code> let’s suppose we wanted to know all the same summary statistics for age but within each education level We could simply add one line to our already written code to make this happen seemlessly:</p>
+<pre class="r"><code>bfi %&gt;% 
+  group_by(education) %&gt;% 
+  summarize(
+    mean    = mean(age,na.rm=T),
+    median  = median(age,na.rm=T),
+    sd      = sd(age,na.rm=T),
+    min     = min(age,na.rm=T),
+    max     = max(age,na.rm=T)
+)</code></pre>
+<pre><code>## `summarise()` ungrouping output (override with `.groups` argument)</code></pre>
+<pre><code>## # A tibble: 6 x 6
+##   education  mean median    sd   min   max
+##       &lt;int&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;int&gt;
+## 1         1  25.1     20 10.4     14    62
+## 2         2  31.5     27 12.2     17    86
+## 3         3  27.2     24  9.45    11    63
+## 4         4  33.0     30 10.3     18    70
+## 5         5  35.3     32 11.0      3    74
+## 6        NA  18.0     16  8.52     9    61</code></pre>
+<p>The possibilities are quite broad once you start getting used the logic of grouping and summarizing variables. For example, you can make summary variables based on multiple grouping variables. Take a look:</p>
+<pre class="r"><code>bfi %&gt;% 
+  group_by(education,gender) %&gt;% 
+  summarize(
+    mean    = mean(age,na.rm=T),
+    median  = median(age,na.rm=T),
+    sd      = sd(age,na.rm=T),
+    min     = min(age,na.rm=T),
+    max     = max(age,na.rm=T)
+)</code></pre>
+<pre><code>## `summarise()` regrouping output by &#39;education&#39; (override with `.groups` argument)</code></pre>
+<pre><code>## # A tibble: 12 x 7
+## # Groups:   education [6]
+##    education gender  mean median    sd   min   max
+##        &lt;int&gt;  &lt;int&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;int&gt;
+##  1         1      1  25.2     20  9.82    15    53
+##  2         1      2  25.1     20 10.8     14    62
+##  3         2      1  31.5     27 12.3     18    65
+##  4         2      2  31.5     27 12.3     17    86
+##  5         3      1  25.4     22  8.13    16    60
+##  6         3      2  28.0     25  9.83    11    63
+##  7         4      1  33.2     30 10.7     20    70
+##  8         4      2  32.9     30 10.2     18    59
+##  9         5      1  33.9     30 12.0      3    74
+## 10         5      2  36.1     34 10.3     19    66
+## 11        NA      1  18.9     17  9.37    12    55
+## 12        NA      2  17.4     16  7.98     9    61</code></pre>
+</div>
+</div>
+</div>
+<div id="two-table-verbs" class="section level3">
+<h3>Two-Table Verbs</h3>
+<p>Two-table verbs are <code>dplyr</code> functions that use two datasets and do something with them. Most commonly, these two-table verbs are used to merge data. However, as we will see, merging data is not necessarily a simple task and many problems arise when attempting even the simpliest of merges.</p>
+<p>In general, there are two types of joins:</p>
+<ol style="list-style-type: decimal">
+<li>Mutating joins, ones that add more variables to your data</li>
+<li>Filtering joings, ones that operate only on the observations of the data and do not add any new variables to your data.</li>
+</ol>
+<p>When using join functions, you will be explicitly supplying 2 data.frames and specific columns to match by. For example, you might want to merge two datasets from different timepoints in a longitudinal study. Thus, you will merge these datasets using a key, such as participant ID.</p>
+<div id="example-data" class="section level4">
+<h4>Example Data</h4>
+<p>To show how two-table verbs work, I will need another dataset to merge with the BFI data. The dataset we will use is a sample of 1,525 subjects from the Synthetic Aperture Personality Assessment (SAPA) web based personality assessment project (see the psych pacakge description for more details). The dataset contains variables that measure cognitive performance. Below is the code I used to get these data into R:</p>
+<pre class="r"><code># load the data from psych package
+data(&quot;ability&quot;)
+
+# convert it to a tibble
+ability &lt;- as_tibble(ability)
+
+# take a look at the variables
+glimpse(ability)</code></pre>
+<pre><code>## Rows: 1,525
+## Columns: 16
+## $ reason.4  &lt;dbl&gt; 0, 0, 0, 1, NA, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1…
+## $ reason.16 &lt;dbl&gt; 0, 0, 1, NA, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1…
+## $ reason.17 &lt;dbl&gt; 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, NA, 1…
+## $ reason.19 &lt;dbl&gt; 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1,…
+## $ letter.7  &lt;dbl&gt; 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, NA, 1, 0, 1, 0, 1, 1, 1, 1, 1…
+## $ letter.33 &lt;dbl&gt; 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1,…
+## $ letter.34 &lt;dbl&gt; 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0,…
+## $ letter.58 &lt;dbl&gt; 0, 0, 0, 0, NA, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1…
+## $ matrix.45 &lt;dbl&gt; 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1,…
+## $ matrix.46 &lt;dbl&gt; 0, 0, 1, NA, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1…
+## $ matrix.47 &lt;dbl&gt; 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1,…
+## $ matrix.55 &lt;dbl&gt; 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0,…
+## $ rotate.3  &lt;dbl&gt; 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,…
+## $ rotate.4  &lt;dbl&gt; 0, 0, 0, 0, 0, 1, 1, 1, 0, NA, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1…
+## $ rotate.6  &lt;dbl&gt; 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1,…
+## $ rotate.8  &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1,…</code></pre>
+</div>
+<div id="matching-values" class="section level4">
+<h4>Matching values</h4>
+<p>The whole idea of joining datasets is predicated on the assumption that tables contain at least some of the same observations. In our case, we want to join the BFI data with the ability data so that we can look at participants who have completed personality and ability items. Our datasets do not actually have the same observations or at there is no column of unique observation identifiers to help us join the tables. As such, we are going to make some observation identifiers ourselves.</p>
+<pre class="r"><code># Set seed so you get the same results as me
+set.seed(1)
+
+# make ID numbers for the 2800 observations in the BFI data
+bfi_fake_ids &lt;- bfi %&gt;% 
+  mutate(id = 1:n())
+
+# make ID numbers for the 1525 observations in the ability data based on the BFI IDs
+ability_fake_ids &lt;- ability %&gt;% 
+  mutate(id = c(sample(bfi_fake_ids$id,1000,replace = F),3001:3525)) # make some IDs from bfi and some new ones</code></pre>
+</div>
+<div id="mutating-joins" class="section level4">
+<h4>Mutating Joins</h4>
+<p>Remember, mutating joins merge together two datasets. They are ‘mutating’ because the resulting merged dataset will contain more variables.</p>
+</div>
+<div id="inner-join" class="section level4">
+<h4>Inner Join</h4>
+<p>Inner joins (using <code>inner_join()</code>) will always return a data set that contains observations that exist in both data sets. As such, if I do an <code>inner_join()</code> using the BFI and ability data, the newly joined dataset should only contain observations that match based on ID numbers:</p>
+<pre class="r"><code>inner_join(bfi_fake_ids, ability_fake_ids, by = c(&quot;id&quot; = &quot;id&quot;))</code></pre>
+<pre><code>## # A tibble: 1,000 x 45
+##       A1    A2    A3    A4    A5    C1    C2    C3    C4    C5    E1    E2    E3
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1     2     4     3     4     4     2     3     3     4     4     3     3     3
+##  2     4     3     6     3     3     6     6     3     4     5     5     3    NA
+##  3     5     5     5     6     4     5     4     3     2     2     3     3     3
+##  4     5     5     5     6     6     4     4     4     2     1     2     2     4
+##  5     4     5     2     2     1     5     5     5     2     2     3     4     3
+##  6     4     6     6     2     5     4     4     4     4     4     1     2     5
+##  7     4     4     5     4     3     5     4     5     4     6     1     2     4
+##  8     1     6     6     1     5     5     4     4     2     3     1     2     4
+##  9     2     4     4     4     3     6     5     6     1     1     2     4     4
+## 10     2     5     1     3     5     5     4     5     2     5     1     2     6
+## # … with 990 more rows, and 32 more variables: E4 &lt;int&gt;, E5 &lt;int&gt;, N1 &lt;int&gt;,
+## #   N2 &lt;int&gt;, N3 &lt;int&gt;, N4 &lt;int&gt;, N5 &lt;int&gt;, O1 &lt;int&gt;, O2 &lt;int&gt;, O3 &lt;int&gt;,
+## #   O4 &lt;int&gt;, O5 &lt;int&gt;, gender &lt;int&gt;, education &lt;int&gt;, age &lt;int&gt;, id &lt;int&gt;,
+## #   reason.4 &lt;dbl&gt;, reason.16 &lt;dbl&gt;, reason.17 &lt;dbl&gt;, reason.19 &lt;dbl&gt;,
+## #   letter.7 &lt;dbl&gt;, letter.33 &lt;dbl&gt;, letter.34 &lt;dbl&gt;, letter.58 &lt;dbl&gt;,
+## #   matrix.45 &lt;dbl&gt;, matrix.46 &lt;dbl&gt;, matrix.47 &lt;dbl&gt;, matrix.55 &lt;dbl&gt;,
+## #   rotate.3 &lt;dbl&gt;, rotate.4 &lt;dbl&gt;, rotate.6 &lt;dbl&gt;, rotate.8 &lt;dbl&gt;</code></pre>
+</div>
+<div id="left-right-join" class="section level4">
+<h4>Left &amp; Right Join</h4>
+<div id="left-join" class="section level5">
+<h5>Left Join</h5>
+<p>A left_join() keeps all observations from the <code>data.frame</code> on the <strong>left</strong> and grabs only the observations from the right <code>data.frame</code> that match the left:</p>
+<pre class="r"><code>left_join(bfi_fake_ids, ability_fake_ids, by = c(&quot;id&quot; = &quot;id&quot;))</code></pre>
+<pre><code>## # A tibble: 2,800 x 45
+##       A1    A2    A3    A4    A5    C1    C2    C3    C4    C5    E1    E2    E3
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1     2     4     3     4     4     2     3     3     4     4     3     3     3
+##  2     2     4     5     2     5     5     4     4     3     4     1     1     6
+##  3     5     4     5     4     4     4     5     4     2     5     2     4     4
+##  4     4     4     6     5     5     4     4     3     5     5     5     3     4
+##  5     2     3     3     4     5     4     4     5     3     2     2     2     5
+##  6     6     6     5     6     5     6     6     6     1     3     2     1     6
+##  7     2     5     5     3     5     5     4     4     2     3     4     3     4
+##  8     4     3     1     5     1     3     2     4     2     4     3     6     4
+##  9     4     3     6     3     3     6     6     3     4     5     5     3    NA
+## 10     2     5     6     6     5     6     5     6     2     1     2     2     4
+## # … with 2,790 more rows, and 32 more variables: E4 &lt;int&gt;, E5 &lt;int&gt;, N1 &lt;int&gt;,
+## #   N2 &lt;int&gt;, N3 &lt;int&gt;, N4 &lt;int&gt;, N5 &lt;int&gt;, O1 &lt;int&gt;, O2 &lt;int&gt;, O3 &lt;int&gt;,
+## #   O4 &lt;int&gt;, O5 &lt;int&gt;, gender &lt;int&gt;, education &lt;int&gt;, age &lt;int&gt;, id &lt;int&gt;,
+## #   reason.4 &lt;dbl&gt;, reason.16 &lt;dbl&gt;, reason.17 &lt;dbl&gt;, reason.19 &lt;dbl&gt;,
+## #   letter.7 &lt;dbl&gt;, letter.33 &lt;dbl&gt;, letter.34 &lt;dbl&gt;, letter.58 &lt;dbl&gt;,
+## #   matrix.45 &lt;dbl&gt;, matrix.46 &lt;dbl&gt;, matrix.47 &lt;dbl&gt;, matrix.55 &lt;dbl&gt;,
+## #   rotate.3 &lt;dbl&gt;, rotate.4 &lt;dbl&gt;, rotate.6 &lt;dbl&gt;, rotate.8 &lt;dbl&gt;</code></pre>
+<p>Notice that the number of observations is equal to the number observations in the left hand dataset:</p>
+<pre class="r"><code># joined data
+left_join(bfi_fake_ids, ability_fake_ids, by = c(&quot;id&quot; = &quot;id&quot;)) %&gt;% nrow()</code></pre>
+<pre><code>## [1] 2800</code></pre>
+<pre class="r"><code># data on the left hand side
+bfi_fake_ids %&gt;% nrow()</code></pre>
+<pre><code>## [1] 2800</code></pre>
+</div>
+<div id="right-join" class="section level5">
+<h5>Right Join</h5>
+<p>A <code>right_join()</code> keeps all observations from the <code>data.frame</code> on the <strong>right</strong> and grabs only the observations from the left data.frame that match the right:</p>
+<pre class="r"><code>right_join(bfi_fake_ids, ability_fake_ids, by = c(&quot;id&quot; = &quot;id&quot;))</code></pre>
+<pre><code>## # A tibble: 1,525 x 45
+##       A1    A2    A3    A4    A5    C1    C2    C3    C4    C5    E1    E2    E3
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1     2     4     3     4     4     2     3     3     4     4     3     3     3
+##  2     4     3     6     3     3     6     6     3     4     5     5     3    NA
+##  3     5     5     5     6     4     5     4     3     2     2     3     3     3
+##  4     5     5     5     6     6     4     4     4     2     1     2     2     4
+##  5     4     5     2     2     1     5     5     5     2     2     3     4     3
+##  6     4     6     6     2     5     4     4     4     4     4     1     2     5
+##  7     4     4     5     4     3     5     4     5     4     6     1     2     4
+##  8     1     6     6     1     5     5     4     4     2     3     1     2     4
+##  9     2     4     4     4     3     6     5     6     1     1     2     4     4
+## 10     2     5     1     3     5     5     4     5     2     5     1     2     6
+## # … with 1,515 more rows, and 32 more variables: E4 &lt;int&gt;, E5 &lt;int&gt;, N1 &lt;int&gt;,
+## #   N2 &lt;int&gt;, N3 &lt;int&gt;, N4 &lt;int&gt;, N5 &lt;int&gt;, O1 &lt;int&gt;, O2 &lt;int&gt;, O3 &lt;int&gt;,
+## #   O4 &lt;int&gt;, O5 &lt;int&gt;, gender &lt;int&gt;, education &lt;int&gt;, age &lt;int&gt;, id &lt;int&gt;,
+## #   reason.4 &lt;dbl&gt;, reason.16 &lt;dbl&gt;, reason.17 &lt;dbl&gt;, reason.19 &lt;dbl&gt;,
+## #   letter.7 &lt;dbl&gt;, letter.33 &lt;dbl&gt;, letter.34 &lt;dbl&gt;, letter.58 &lt;dbl&gt;,
+## #   matrix.45 &lt;dbl&gt;, matrix.46 &lt;dbl&gt;, matrix.47 &lt;dbl&gt;, matrix.55 &lt;dbl&gt;,
+## #   rotate.3 &lt;dbl&gt;, rotate.4 &lt;dbl&gt;, rotate.6 &lt;dbl&gt;, rotate.8 &lt;dbl&gt;</code></pre>
+<p>Notice that the number of observations is equal to the number observations in the right hand dataset:</p>
+<pre class="r"><code># joined data
+right_join(bfi_fake_ids, ability_fake_ids, by = c(&quot;id&quot; = &quot;id&quot;)) %&gt;% nrow()</code></pre>
+<pre><code>## [1] 1525</code></pre>
+<pre class="r"><code># data on the left hand side
+ability_fake_ids %&gt;% nrow()</code></pre>
+<pre><code>## [1] 1525</code></pre>
+</div>
+</div>
+<div id="full-join" class="section level4">
+<h4>Full Join</h4>
+<p>A <code>full_join()</code> keeps all observations from both the left <strong>and</strong> right <code>data.frames</code>, regardless of matches:</p>
+<pre class="r"><code>full_join(bfi_fake_ids,ability_fake_ids, by = c(&quot;id&quot;=&quot;id&quot;))</code></pre>
+<pre><code>## # A tibble: 3,325 x 45
+##       A1    A2    A3    A4    A5    C1    C2    C3    C4    C5    E1    E2    E3
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1     2     4     3     4     4     2     3     3     4     4     3     3     3
+##  2     2     4     5     2     5     5     4     4     3     4     1     1     6
+##  3     5     4     5     4     4     4     5     4     2     5     2     4     4
+##  4     4     4     6     5     5     4     4     3     5     5     5     3     4
+##  5     2     3     3     4     5     4     4     5     3     2     2     2     5
+##  6     6     6     5     6     5     6     6     6     1     3     2     1     6
+##  7     2     5     5     3     5     5     4     4     2     3     4     3     4
+##  8     4     3     1     5     1     3     2     4     2     4     3     6     4
+##  9     4     3     6     3     3     6     6     3     4     5     5     3    NA
+## 10     2     5     6     6     5     6     5     6     2     1     2     2     4
+## # … with 3,315 more rows, and 32 more variables: E4 &lt;int&gt;, E5 &lt;int&gt;, N1 &lt;int&gt;,
+## #   N2 &lt;int&gt;, N3 &lt;int&gt;, N4 &lt;int&gt;, N5 &lt;int&gt;, O1 &lt;int&gt;, O2 &lt;int&gt;, O3 &lt;int&gt;,
+## #   O4 &lt;int&gt;, O5 &lt;int&gt;, gender &lt;int&gt;, education &lt;int&gt;, age &lt;int&gt;, id &lt;int&gt;,
+## #   reason.4 &lt;dbl&gt;, reason.16 &lt;dbl&gt;, reason.17 &lt;dbl&gt;, reason.19 &lt;dbl&gt;,
+## #   letter.7 &lt;dbl&gt;, letter.33 &lt;dbl&gt;, letter.34 &lt;dbl&gt;, letter.58 &lt;dbl&gt;,
+## #   matrix.45 &lt;dbl&gt;, matrix.46 &lt;dbl&gt;, matrix.47 &lt;dbl&gt;, matrix.55 &lt;dbl&gt;,
+## #   rotate.3 &lt;dbl&gt;, rotate.4 &lt;dbl&gt;, rotate.6 &lt;dbl&gt;, rotate.8 &lt;dbl&gt;</code></pre>
+<p>Notice that the number of observations is 3325. This number represents the total number of unique people that are either in the left hand or right hand dataset or both datasets.</p>
+</div>
+<div id="filtering-joins" class="section level4">
+<h4>Filtering Joins</h4>
+<p>Remember, filtering joins only affect the observations in your data, they don’t add any new variables. You might want to do a filtering join if you want to work with the obseravtions that appear in another dataset but you are not actually interested in using any of the variables in the other dataset. You might also do a filtering join to figure out why a join didn’t work.</p>
+</div>
+<div id="semi-join" class="section level4">
+<h4>Semi Join</h4>
+<p>A <code>semi_join()</code> simply keeps all observations that appear in left dataset that have a match in the right dataset. This is exactly the same as <code>inner_join()</code> except we didn’t add any variables to the dataset:</p>
+<pre class="r"><code>semi_join(bfi_fake_ids, ability_fake_ids, by = c(&quot;id&quot; = &quot;id&quot;))</code></pre>
+<pre><code>## # A tibble: 1,000 x 29
+##       A1    A2    A3    A4    A5    C1    C2    C3    C4    C5    E1    E2    E3
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1     2     4     3     4     4     2     3     3     4     4     3     3     3
+##  2     4     3     6     3     3     6     6     3     4     5     5     3    NA
+##  3     5     5     5     6     4     5     4     3     2     2     3     3     3
+##  4     5     5     5     6     6     4     4     4     2     1     2     2     4
+##  5     4     5     2     2     1     5     5     5     2     2     3     4     3
+##  6     4     6     6     2     5     4     4     4     4     4     1     2     5
+##  7     4     4     5     4     3     5     4     5     4     6     1     2     4
+##  8     1     6     6     1     5     5     4     4     2     3     1     2     4
+##  9     2     4     4     4     3     6     5     6     1     1     2     4     4
+## 10     2     5     1     3     5     5     4     5     2     5     1     2     6
+## # … with 990 more rows, and 16 more variables: E4 &lt;int&gt;, E5 &lt;int&gt;, N1 &lt;int&gt;,
+## #   N2 &lt;int&gt;, N3 &lt;int&gt;, N4 &lt;int&gt;, N5 &lt;int&gt;, O1 &lt;int&gt;, O2 &lt;int&gt;, O3 &lt;int&gt;,
+## #   O4 &lt;int&gt;, O5 &lt;int&gt;, gender &lt;int&gt;, education &lt;int&gt;, age &lt;int&gt;, id &lt;int&gt;</code></pre>
+<p>Notice how the number of observations between the two joins are equal:</p>
+<pre class="r"><code>semi_join(bfi_fake_ids, ability_fake_ids, by = c(&quot;id&quot; = &quot;id&quot;)) %&gt;% nrow()</code></pre>
+<pre><code>## [1] 1000</code></pre>
+<pre class="r"><code>inner_join(bfi_fake_ids, ability_fake_ids, by = c(&quot;id&quot; = &quot;id&quot;)) %&gt;% nrow()</code></pre>
+<pre><code>## [1] 1000</code></pre>
+</div>
+<div id="anti-join" class="section level4">
+<h4>Anti Join</h4>
+<p>An <code>anti_join()</code> drops all the rows in the left dataset that have a match in the right dataset. In our case, the <code>anti_join()</code> will give us a dataset with all the participants that completed the BFI but did not complete the cognitive assessment for our ability dataset:</p>
+<pre class="r"><code>anti_join(bfi_fake_ids, ability_fake_ids, by = c(&quot;id&quot; = &quot;id&quot;))</code></pre>
+<pre><code>## # A tibble: 1,800 x 29
+##       A1    A2    A3    A4    A5    C1    C2    C3    C4    C5    E1    E2    E3
+##    &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+##  1     2     4     5     2     5     5     4     4     3     4     1     1     6
+##  2     5     4     5     4     4     4     5     4     2     5     2     4     4
+##  3     4     4     6     5     5     4     4     3     5     5     5     3     4
+##  4     2     3     3     4     5     4     4     5     3     2     2     2     5
+##  5     6     6     5     6     5     6     6     6     1     3     2     1     6
+##  6     2     5     5     3     5     5     4     4     2     3     4     3     4
+##  7     4     3     1     5     1     3     2     4     2     4     3     6     4
+##  8     2     5     6     6     5     6     5     6     2     1     2     2     4
+##  9     4     4     5     6     5     4     3     5     3     2     1     3     2
+## 10     2     5     5     5     5     5     4     5     4     5     3     3     4
+## # … with 1,790 more rows, and 16 more variables: E4 &lt;int&gt;, E5 &lt;int&gt;, N1 &lt;int&gt;,
+## #   N2 &lt;int&gt;, N3 &lt;int&gt;, N4 &lt;int&gt;, N5 &lt;int&gt;, O1 &lt;int&gt;, O2 &lt;int&gt;, O3 &lt;int&gt;,
+## #   O4 &lt;int&gt;, O5 &lt;int&gt;, gender &lt;int&gt;, education &lt;int&gt;, age &lt;int&gt;, id &lt;int&gt;</code></pre>
+<p>Notice that the number of observations is 1800. This number represents the total number of people that completed the BFI assessment but did not complete the cognitive assessment.</p>
+<pre class="r"><code>anti_join(ability_fake_ids,bfi_fake_ids, by = c(&quot;id&quot; = &quot;id&quot;))</code></pre>
+<pre><code>## # A tibble: 525 x 17
+##    reason.4 reason.16 reason.17 reason.19 letter.7 letter.33 letter.34 letter.58
+##       &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+##  1        1         1         1         0        1         1         1         0
+##  2        1         1         1         1        1         1         1         1
+##  3        1         1         1         0        0         0         0         0
+##  4        1         1         1         1        1         1         1         1
+##  5        0         0         0         1        0         1         1         0
+##  6        1        NA         1        NA        1         1         1         0
+##  7        1         1         1         1        1         0         1         0
+##  8        1         1         1         1        0         0         1         0
+##  9        0         1         1         1        1         1         1         0
+## 10        1         1         1         1        1         0         1         1
+## # … with 515 more rows, and 9 more variables: matrix.45 &lt;dbl&gt;, matrix.46 &lt;dbl&gt;,
+## #   matrix.47 &lt;dbl&gt;, matrix.55 &lt;dbl&gt;, rotate.3 &lt;dbl&gt;, rotate.4 &lt;dbl&gt;,
+## #   rotate.6 &lt;dbl&gt;, rotate.8 &lt;dbl&gt;, id &lt;int&gt;</code></pre>
+<p>Notice that the number of observations is 525. This number represents the total number of people that completed the cognitive assessment but did not complete the BFI assessment.</p>
+</div>
+</div>
