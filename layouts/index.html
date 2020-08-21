@@ -2,8 +2,8 @@
 {{ define "header"}} {{ partial "header" .}} {{end}}
 {{ define "main"}}
 
-<div class="uk-cover-container" uk-height-viewport="offset-top: true;">
-  <img src="img/juniper.jpg" style = "filter: blur(0px);" uk-cover>
+<div class="uk-cover-container" uk-height-viewport="offset-top: true;" >
+  <img data-src="img/juniper.jpg" style = "filter: blur(0px);" uk-cover uk-img>
   <div class="uk-position-cover uk-dark uk-flex uk-flex-middle uk-text-center ">
     <div class = "uk-container uk-padding-large uk-light">
       <h1 class = "uk-heading-medium uk-text-bold" ><span style = "background-color: rgba(0,0,0, 0.2);">{{ .Site.Params.author }}, {{ .Site.Params.degree }}</span></h1>
