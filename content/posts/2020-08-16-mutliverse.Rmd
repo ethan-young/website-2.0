@@ -16,21 +16,26 @@ tags:
 
 ### Introduction
 
-In recent years, there is a growing interest in multiverse analysis, a technique for compiling all possible datasets that could result from different data processing decisions. Once compiled, researchers can run their analysis of interest across all datasets in the mulitverse to see how sensitive their models are to the decisions made that produced the underlying data. In this post, I attempt my own multiverse analysis using simulated data.
+In recent years, there is a growing interest in multiverse analysis, a technique for compiling all possible datasets that could result from different data processing decisions. Once compiled, researchers can run their analysis of interest across all datasets in the mulitverse to see how sensitive their models are to the decisions that produced the underlying data. In this post, I attempt my own multiverse analysis using simulated data.
 
-Note that there are already many good places to learn more about the multiverse analysis, including papers, blog posts, and code examples. My intention is to understand the mechanics the technique without the aid of a pre-written package, deepen my own understanding, and to flesh out the different possible ways to use the technique and compile results.
+Note that there are already many good places to learn more about the multiverse analysis, including papers, blog posts, and code examples. My intention is to understand the mechanics the technique without the aid of a pre-written package. My goal is to deepen my own understanding and to flesh out the different ways to use the technique and compile/visualize the results.
 
 #### Arbitrary vs. Non-Arbitrary Decisions
 
-Processing raw data involves many steps. For example, the typical analysis involves cleaning, preparing, and creating analysis variables, among many other possible steps. Any specific set data processing choices eventually leads to an analysis-ready dataset. However, a slightly different set of choices will lead to a different analysis dataset. 
+Processing raw data involves many steps, such as cleaning, preparing, and creating analysis variables (among many others). Such decisions eventually produce an analysis-ready dataset, but making (even slightly) different decisions will produce a different dataset. And so emerges the multiverse: all possible datasets that could emerge from different data processing decisions (see also the [garden of forking paths](https://www.americanscientist.org/article/the-statistical-crisis-in-science)).
 
-Data processing steps can be either arbitrary and non-arbitrary. Arbitrary decisions ar those that 1) not expected to influence results and 2) equally defensible/have reasonable justifications. For example, whether to remove outliers at a +/- 3 or 2.5 standard deviations could be a relatively arbitrary data processing decisions; neither cutoff is theoretically informed and both are equally defensible. Non-arbitrary choices should affect results. For example, controlling for a confound could be considered non-arbitrary on theoretical grounds or because doing so will aid interpretation (e.g., when the confound correlates with the outcome of interest). 
+An important distinction in multiverse analyses is arbitrary and non-arbitrary nature of particular decisions. Arbitrary decisions ar those that 
 
-Multiverse analysis should be ran over all possible **arbitrary** decisions. This is important because the multiverse can quickly become very large and difficult to interpret. Thus, data analysts should take care to consider what data processing steps are arbitrary or not. Again, non-arbitrary decisions come from theory or empirical observations. 
+1. are not expected to influence results and,
+2. equally defensible/have reasonable justifications
+
+For example, whether to remove outliers at +/- 3 or 2.5 standard deviations could be arbitrary. Neither cutoff is theoretically informed and both are equally defensible. In contrast, non-arbitrary choices are expected to affect results, either for theoretical or known empirical reasons. For example, theory might suggest controlling for a confound is crucial for interpreting results. Empirically, controlling for a confound may aid interpretation because it is already known to correlates with the outcome of interest. 
+
+Multiverse analysis should be ran over all possible **arbitrary** decisions. This is important because the multiverse can quickly become unnecessarily large and difficult to interpret. Ideally, the multiverse will comprise all datasets that, by themselves, would make sense to analyze and interpret individually. 
 
 #### Setup
 
-To conduct my own multiverse analysis, I will be using a number of packages from the [tidyverse](www.tidyverse.org). Below are the specific packages I used for my setup:
+To conduct my multiverse analysis, I will be using a number of packages from the [tidyverse](www.tidyverse.org). Below are the specific packages I used for my setup:
 
 ```{r setup, message = F, warning= F}
 # Load relevant libraries
@@ -57,17 +62,17 @@ theme_set(
 
 #### Simulated Data
 
-The raw data are randomly generated below. I modeled the variables based on an actual project I am working on. The research question is whether or not early life unpredictability (`iv_unp`) is associated with performance on a cognitive test with two versions, a standard (`dv_std`) and ecologically relevant (`dv_eco`) version. We hypothesize that unpredictability negatively impacts perforance on the standard version but enhances performance on the ecological version. To that end, I've made performance depend on `iv_unp` with some error.
+The raw data are randomly generated below. I modeled the variables based on an actual project I am working on. The research question is whether or not early life unpredictability^[There are actually several other IVs in the actual project, including violence exposure and socioeconomic adversity.] (`iv_unp`) is associated with performance on a cognitive test with two versions, a standard (`dv_std`) and ecologically relevant (`dv_eco`) version^[The actual project includes an attention shifting and working memory updating task, each with a standard and ecological version]. We hypothesize that unpredictability negatively impacts performance on the standard version but enhances performance on the ecological version. To that end, I've made performance depend on `iv_unp` with some error.
 
 Exclusion variables are also included in the data.
 
-- `ex_sample`: The data (not these but those that I will be actually analzing in a real dataset) come from two samples. The first sample is smaller and considerably more difficult to run our protocol. The second sample is larger and was much easier to control how the protocol was executed. It is possible that our analysis will depend on wether or not we include the smaller subsample.
-- `ex_csd`: socially desirable responding, which may have undue influence on our predictor. Children who experience adversity and do not want to report it may also score high on a measure of socially desirability.
-- `ex_sped`: Some in our sample recieve special education. It is possible that some students may have cognitive impairments and shouldn't be analyzed with rest or the sample.
+- `ex_sample`: The data (not these but those that I will be actually analyzing in a real dataset) come from two samples. The first sample is smaller and considerably more difficult to run our protocol. The second sample is larger and was much easier to control how the protocol was executed. Thus our results could be different depending on whether or not we include the smaller, noisier sample.
+- `ex_csd`: socially desirable responding, which may have undue influence on our predictor. Children who experience adversity, and might want to hide it, may also score high on a measure of socially desirability.
+- `ex_sped`: Some in our sample receive special education. It is possible that some students may have cognitive impairments and shouldn't be analyzed with rest or the sample.
 - `ex_att`: We included an a few trap questions in our assessment to detect individuals who may not be taking the study seriously.
 - `ex_imp`: Our research assistants noted whether or not participants had trouble reading or seemed impaired somehow.
 
-These variables will be used to constuct a multiverse of datasets.
+These variables will be used to construct a multiverse of datasets.
 
 ```{r data}
 # Set the seed for reproducibility
@@ -101,7 +106,7 @@ head(sim_data) %>%
 
 ### The Arbitrary Data Decision Grid
 
-The first step in conducting the multiverse is to construct a grid of filtering and/or processing steps. The function `expand_grid()` creates all possible combinations of these decisions. Our decisions are as follows:
+The first step in conducting the multiverse is to construct a grid of data-filtering and/or processing steps. The function `expand_grid()` creates all possible combinations of these decisions. My decisions are as follows:
 
 - Include or exclude the smaller subsample
 - Include or exclude people who failed attention checks
@@ -123,9 +128,9 @@ decision_grid <-
   )
 ```
 
-The above grid contains `r nrow(decision_grid)` different data processing steps, which means our grid will produce a multiverse of `r nrow(decision_grid)` datasets. Note that each row contains character strings of the actual code that will be evaluated later to filter raw data. 
+The above grid contains `r nrow(decision_grid)` different data processing steps, which means our grid will produce a multiverse of `r nrow(decision_grid)` datasets. Note that each row contains character strings of the actual code that will be evaluated later to filter the raw data. 
 
-For plotting, I also created a grid key with nice names for each decision and nice names for the variables they refer to in the data.
+For plotting, I also created a grid key with nice names for each decision and for the variables they involve.
 
 ```{r decision-key}
 decision_grid_key <- 
@@ -158,7 +163,7 @@ decision_grid_key %>%
 
 ### Create the Multiverse
 
-After creating the decision grid, we can place the filtering instructions inside a loop to iterate over the all possible decisions.  This creates a multiverse of `r nrow(decision_grid)` data sets. At the end of each iteration, I save a list of the data, sample size, and the specific decisions that produced the data. The result of this loop will be a large list of `r nrow(decision_grid)` elements, each of which are lists containing the above information. 
+After creating the decision grid, I can place the filtering instructions inside a loop to iterate over the all possible decisions combinations. This creates a multiverse of `r nrow(decision_grid)` data sets. At the end of each iteration, I save a list of the data, sample size, and the specific decisions that produced the data. The result of this loop will be a single, large list of `r nrow(decision_grid)` elements.
 
 ```{r}
 # Loop through the multiverse grid and create datasets accordingly
@@ -200,7 +205,7 @@ multiverse_data[[1]]
 
 #### Check Sample Sizes
 
-We can also check the sample sizes of each universe in our multiverse:
+One issue that could arise in multiverse analysis is the sample sizes of individual datasets. If a set of decisions greatly reduces the overall sample size, it may not make sense to analyze the associated dataset. To check this issue, I can plot the distribution of sample sizes as a function of the decisions in our decision grid:
 
 ```{r fig.showtext=T, fig.height=10}
 mulitverse_sample_size <- 
@@ -232,9 +237,16 @@ mulitverse_sample_size %>%
 
 ### Analyze the Multiverse 
 
-We've generated our multiverse of datasets, now we need to perform our analysis. My strategy is to loop over my `multiverse_data` object. First, I extract the decisions that produced the data to know what we should do with `ex_csd` (i.e., create residualized scores, include it as a covariate, or do nothing). Then I restructure the data into long format so I can runa mixed model looking at the main effect of `iv_unp` (between subjects), main effect of `task_type` (standard or ecological version), and their interaction and estimating random intercepts for each participant.
+I've generated our multiverse of datasets, now I need to analyze it. My strategy is to loop over my `multiverse_data` object. First, I extract the decisions that produced the data to know what we should do with `ex_csd` (i.e., create residualized scores, include it as a covariate, or do nothing). Then I restructure the data into long format so I can run a mixed model with random intercepts to look at the main effect of `iv_unp` (between subjects), main effect of `task_type` (standard or ecological version, within subjects), and their interaction.
 
-At the end of each iteration, I compile another list with data, decisions that produced the data, whether or not `ex_csd` was residulized or included as a covariate (or niether), the mixed model object, a tidied table of the coefficients from the model, and table of predicted effects based on +/- 1 SD of `iv_unp` and `task_type` (standard or ecological) so we can visualize interactions. 
+At the end of each iteration, I compile another list with the following components:
+
+- The data
+- The decisions that produced the data
+- What was done with `ex_csd`
+- The entire mixed model object (e.g. `lmer` object)
+- A tidied table of the coefficients from the model
+- A table of predicted effects based on +/- 1 SD of `iv_unp` and `task_type` (standard or ecological) to visualize interactions
 
 ```{r warning=F,message=F,error=F}
 # Loop through all the datasets in the multiverse and do the same analysis
@@ -307,7 +319,7 @@ multiverse_models <-
 
 #### Multiverse Effect Sizes
 
-With our multiverse of analysis results, we can extract the coefficients for plotting and interpretation. Here, I just loop through my multiverse and get the terms of interest (fixed main effects and interaction term).
+With the multiverse of results, I can extract the coefficients (i.e. regression slopes) for plotting and interpretation. Here, I just loop through my multiverse of results to get this information (i.e., fixed main effects and interaction term).
 
 ```{r}
 # Get the model estimates out of the giant list
@@ -343,11 +355,11 @@ multiverse_plot_data <-
 
 ### Displaying the Results
 
-There is a lot of information derived from the multiverse analysis. An efficient way of looking at the results is to plot the effect size of each term from our model as a function of each decision, arrange from smallest to largest and (potentially) coloring the estimates by significance. Such a visualization typically has two panels. The first is the effect size curve and the second is a grid of specifications (i.e., decisions) that produced each effect.
+There is a lot of information derived from the multiverse analysis. An efficient way of looking at the results is to visualize the *effect size curve* and *specification grid*. The effect size curve involves extracting the effect sizes from each term and arrange them from smallest to largest, and color them by significance. The specification grid (i.e., decisions) is simply a chart indicating which decisions produced the effects in the curve.
 
-Another way to evaluate the results is to create histograms of the p-values for each effect.
+Another way to evaluate the results is to create histograms of the p-values for each effect. If the p-values of a particular effect tend to cluster around the set alpha level (usually p < .05), the model is relatively robust to the (arbitrary) data processing decisions. If the distribution looks more uniform, the model is more sensitive to these decisions.
 
-Finally, because I am primary interested in interactions, I want to plot the form of each interaction obtained. I can do that by plotting predicted estimates based on high and low unpredictability and task-type for every model.
+Lastly, because I am primary interested in interactions, I want to plot the form of each interaction obtained. I can do that by plotting predicted estimates based on high and low unpredictability and task-type for every model, coloring lines based on the significance of the interaction term.
 
 #### Effect Size Curve
 
@@ -355,9 +367,11 @@ Finally, because I am primary interested in interactions, I want to plot the for
 multiverse_effect_curve <- 
   multiverse_plot_data %>% 
   ggplot(aes(x = as.numeric(multiverse_set), y = mod_estimate, color = p_value)) +
-  geom_point(size = .75, show.legend = F) +
-  geom_ribbon(
-    aes(x = as.numeric(multiverse_set), ymin = mod_estimate - mod_std.error, ymax = mod_estimate + mod_std.error, fill = p_value),
+  geom_point(size = .5) +
+  geom_errorbar(
+    aes(x = as.numeric(multiverse_set), ymin = mod_estimate - mod_std.error, ymax = mod_estimate + mod_std.error, color = p_value),
+    size = .25,
+    width = 0,
     alpha = .25, 
     inherit.aes = F, 
     show.legend = T
@@ -409,7 +423,7 @@ cowplot::plot_grid(
 )
 ```
 
-#### The Multiverse of p-values
+#### The Histogram of p-values
 
 ```{r fig.showtext = T, fig.height=3, warning=F, message=F}
 multiverse_plot_data %>% 
@@ -432,14 +446,21 @@ multiverse_effects <- map_df(multiverse_models, function(x){
     spread(grid_vars, value)
   
   bind_cols(x$mod_effects, n = x$n, decisions)
-})
+}) %>% 
+  left_join(
+    multiverse_plot_data %>% filter(str_detect(mod_term,"\\:")) %>% select(term, p_value, decision),
+    by = "decision"
+  )
 
 # Plot the interactions
 multiverse_effects %>% 
   mutate(group = factor(group, levels = c(-1,1), labels = c("Standard Version","Ecological Version"))) %>% 
-  ggplot(aes(x = x, y = predicted, group = decision)) +
-  geom_line(alpha = .25,size = .5) +
+  ggplot(aes(x = x, y = predicted, group = decision, color = p_value)) +
+  geom_line(alpha = .25,size = .25, show.legend = F) +
   scale_x_continuous("\nEnvironmental Unpredictability") +
-  scale_y_continuous("Performance") +
+  scale_y_continuous("Performance\n") +
+  scale_color_manual(values = c("gray","#f0506e")) +
   facet_wrap(~group) 
 ```
+
+And that's it! My first foray into multiverse style analysis.

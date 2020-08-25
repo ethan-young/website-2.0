@@ -23,6 +23,12 @@
     font-family: Lato;
   }
   
+div.footnotes:before{
+    content: "Footnotes";
+    font-size: 1rem;
+    font-weight: 700;
+  }
+  
 </style>
 
 <div class = 'uk-container-small uk-margin-auto'>
@@ -67,6 +73,9 @@
         )
       code_block += 1
     });
+    
+    $(".footnotes").addClass("uk-text-small uk-padding uk-padding-remove-horizontal");
+    
   });
 
 </script>
