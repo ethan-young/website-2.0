@@ -5,7 +5,7 @@ author: ''
 date: '2020-08-16'
 updated: "`r format(Sys.time(), '%B %d, %Y')`"
 tocbot: true
-slug: mutliverse
+slug: multiverse
 categories: []
 tags:
   - R
@@ -16,20 +16,22 @@ tags:
 
 ### Introduction
 
-In recent years, there is a growing interest in multiverse analysis, a technique for compiling all possible datasets that could result from different data processing decisions. Once compiled, researchers can run their analysis of interest across all datasets in the mulitverse to see how sensitive their models are to the decisions that produced the underlying data. In this post, I attempt my own multiverse analysis using simulated data.
+In recent years, there is a growing interest in multiverse analysis, a technique for compiling all possible datasets that could result from different data processing decisions. Once compiled, researchers can run their analysis of interest across all datasets in the multiverse to see how sensitive their models are to the decisions that produced the underlying data. In this post, I attempt my own multiverse analysis using simulated data.
 
 Note that there are already many good places to learn more about the multiverse analysis, including papers, blog posts, and code examples. My intention is to understand the mechanics the technique without the aid of a pre-written package. My goal is to deepen my own understanding and to flesh out the different ways to use the technique and compile/visualize the results.
 
 #### Arbitrary vs. Non-Arbitrary Decisions
 
-Processing raw data involves many steps, such as cleaning, preparing, and creating analysis variables (among many others). Such decisions eventually produce an analysis-ready dataset, but making (even slightly) different decisions will produce a different dataset. And so emerges the multiverse: all possible datasets that could emerge from different data processing decisions (see also the [garden of forking paths](https://www.americanscientist.org/article/the-statistical-crisis-in-science)).
+Processing raw data involves many steps, such as cleaning, preparing, and creating analysis variables (among many others). Such decisions eventually produce an analysis-ready dataset, but making (even slightly) different decisions will produce a different dataset. And so emerges the multiverse: all possible datasets that could generated from different data processing decisions (see also the [garden of forking paths](https://www.americanscientist.org/article/the-statistical-crisis-in-science)).
 
-An important distinction in multiverse analyses is arbitrary and non-arbitrary nature of particular decisions. Arbitrary decisions ar those that 
+An important distinction in multiverse analysis is between arbitrary and non-arbitrary decisions. Arbitrary decisions are those that:
 
 1. are not expected to influence results and,
 2. equally defensible/have reasonable justifications
 
-For example, whether to remove outliers at +/- 3 or 2.5 standard deviations could be arbitrary. Neither cutoff is theoretically informed and both are equally defensible. In contrast, non-arbitrary choices are expected to affect results, either for theoretical or known empirical reasons. For example, theory might suggest controlling for a confound is crucial for interpreting results. Empirically, controlling for a confound may aid interpretation because it is already known to correlates with the outcome of interest. 
+For example, whether to remove outliers at +/- 3 or 2.5 standard deviations could be arbitrary. Neither cutoff is theoretically informed and both are equally defensible. 
+
+In contrast, non-arbitrary choices are expected to affect results, either for theoretical or empirical reasons. For example, theory might suggest controlling for a confound is crucial for interpreting results. Empirically, controlling for a confound may aid interpretation because such a confound is known to correlate with the outcome of interest and should be accounting for in each our analysis.
 
 Multiverse analysis should be ran over all possible **arbitrary** decisions. This is important because the multiverse can quickly become unnecessarily large and difficult to interpret. Ideally, the multiverse will comprise all datasets that, by themselves, would make sense to analyze and interpret individually. 
 
@@ -44,6 +46,7 @@ library(lmerTest)
 library(broom.mixed)
 library(tidymodels)
 library(ggeffects)
+library(interactions)
 library(showtext)
 
 # Custom font for ggplot
@@ -99,14 +102,18 @@ sim_data <-
   )
 ```
 
+And her are the first 10 rows of the simulated data:
+
 ```{r echo = F, message=F, warning=F}
-head(sim_data) %>% 
+sim_data %>%
+  select(id, iv_unp, contains("dv_"), starts_with("ex_")) %>% 
+  head() %>% 
   knitr::kable(digits = 2, format = 'html', table.attr = "class=\"uk-table uk-table-small uk-table-divider\"")
 ```
 
 ### The Arbitrary Data Decision Grid
 
-The first step in conducting the multiverse is to construct a grid of data-filtering and/or processing steps. The function `expand_grid()` creates all possible combinations of these decisions. My decisions are as follows:
+The first step in conducting creating a multiverse is to construct a grid of data-filtering and/or processing decisions. The function `expand_grid()` creates all possible combinations of these decisions. My decisions are as follows:
 
 - Include or exclude the smaller subsample
 - Include or exclude people who failed attention checks
@@ -163,7 +170,7 @@ decision_grid_key %>%
 
 ### Create the Multiverse
 
-After creating the decision grid, I can place the filtering instructions inside a loop to iterate over the all possible decisions combinations. This creates a multiverse of `r nrow(decision_grid)` data sets. At the end of each iteration, I save a list of the data, sample size, and the specific decisions that produced the data. The result of this loop will be a single, large list of `r nrow(decision_grid)` elements.
+After creating the decision grid, I can place the filtering instructions inside a loop to iterate over all possible decision combinations. At the end of each iteration, I save a list of the data, sample size, and the specific decisions that produced the data. The result of this loop will be a single, large list of `r nrow(decision_grid)` elements.
 
 ```{r}
 # Loop through the multiverse grid and create datasets accordingly
@@ -197,17 +204,17 @@ multiverse_data <-
   })
 ```
 
-Here is an example of the first element of this list:
+Here is an example an element in this list:
 
 ```{r }
-multiverse_data[[1]]
+multiverse_data[[123]]
 ```
 
 #### Check Sample Sizes
 
-One issue that could arise in multiverse analysis is the sample sizes of individual datasets. If a set of decisions greatly reduces the overall sample size, it may not make sense to analyze the associated dataset. To check this issue, I can plot the distribution of sample sizes as a function of the decisions in our decision grid:
+One issue that could arise in multiverse analysis is that the sample sizes of some individual datasets may be very small, at least compared to the full dataset. If this occurs, it may not make sense to analyze the datasets with small sample sizes. To check this issue, I can plot the distribution of sample sizes as a function of the decisions in our decision grid:
 
-```{r fig.showtext=T, fig.height=10}
+```{r fig.showtext=T}
 mulitverse_sample_size <- 
   map_df(multiverse_data, function(x){
   # Grab the decisions flatten them out
@@ -221,6 +228,16 @@ mulitverse_sample_size <-
 })
 
 mulitverse_sample_size %>% 
+  ggplot(aes(x = n)) +
+  geom_histogram(color = "black", bins = 15) +
+  labs(title = "Histogram of Multiverse Sample Sizes", x = "\nSample Size", y = "Number of Datasets\n")
+  
+```
+
+In my case, the minimum sample size was `r min(mulitverse_sample_size$n)` and the maximum was `r max(mulitverse_sample_size$n)`. We can also look at which data processing decisions affected sample size the most:
+
+```{r fig.showtext=T, fig.height=10}
+mulitverse_sample_size %>% 
   select(-ends_with("exp")) %>% 
   gather(variable, exclusion, -decision, -n) %>%
   mutate(variable = str_replace(variable, "_(name)$|_(variable_group)$", ".\\1\\2")) %>% 
@@ -228,7 +245,7 @@ mulitverse_sample_size %>%
   spread(group, exclusion) %>% 
   arrange(decision, variable_group) %>% 
   ggplot() +
-  geom_boxplot(aes(x = name, y = n), notch = T)  +
+  geom_boxplot(aes(x = name, y = n), notch = T, width = .5)  +
   scale_x_discrete("Exclusion Criteria") +
   scale_y_continuous("Sample Size (max = 500)\n") +
   ggtitle("Sample Sizes in the Multiverse") +
@@ -237,7 +254,11 @@ mulitverse_sample_size %>%
 
 ### Analyze the Multiverse 
 
-I've generated our multiverse of datasets, now I need to analyze it. My strategy is to loop over my `multiverse_data` object. First, I extract the decisions that produced the data to know what we should do with `ex_csd` (i.e., create residualized scores, include it as a covariate, or do nothing). Then I restructure the data into long format so I can run a mixed model with random intercepts to look at the main effect of `iv_unp` (between subjects), main effect of `task_type` (standard or ecological version, within subjects), and their interaction.
+I've generated our multiverse of datasets, now I need to analyze it. My strategy is to loop over my `multiverse_data` object. First, I extract the decisions that produced the data to know what we should do with `ex_csd` (i.e., create residualized scores, include it as a covariate, or do nothing).
+
+Next, I restructure the data into long format so I can run a mixed model with random intercepts to look at the main effect of `iv_unp` (between subjects), main effect of `task_type` (standard or ecological version, within subjects), and their interaction.
+
+After running the mixed model, I also do a simple slopes test to evaluate (in the context of an interaction) the simple effects of high versus low unpredictability and standard versus ecological versions of the test.
 
 At the end of each iteration, I compile another list with the following components:
 
@@ -245,6 +266,7 @@ At the end of each iteration, I compile another list with the following componen
 - The decisions that produced the data
 - What was done with `ex_csd`
 - The entire mixed model object (e.g. `lmer` object)
+- The simple slopes test object
 - A tidied table of the coefficients from the model
 - A table of predicted effects based on +/- 1 SD of `iv_unp` and `task_type` (standard or ecological) to visualize interactions
 
@@ -298,6 +320,15 @@ multiverse_models <-
       mod_effects <- ggpredict(mod, terms = c("iv_unp_z [-1,1]", "task_type [-1,1]"))
     }
     
+    # Simple slopes test for Unpredictability and task type
+    if(residualize){
+      mod_ss_unp <- sim_slopes(mod, pred = "task_type",  modx = "iv_unp_resid_z", modx.values = c(-1,1))
+      mod_ss_task <- sim_slopes(mod, pred = "iv_unp_resid_z", modx = "task_type", modx.values = c(-1,1))
+    } else{
+      mod_ss_unp <- sim_slopes(mod, pred = "task_type", modx = "iv_unp_z", modx.values = c(-1,1))
+      mod_ss_task <- sim_slopes(mod, pred = "iv_unp_z", modx = "task_type", modx.values = c(-1,1))
+    }
+    
     # Get the results and turn them into a data.frame
     mod_tidy <- 
       mod %>% 
@@ -312,6 +343,7 @@ multiverse_models <-
       covariate    = covariate,
       mod          = mod,
       mod_tidy     = mod_tidy,
+      mod_sim_slopes = list(unp = mod_ss_unp, task = mod_ss_task),
       mod_effects  = mod_effects
     )
   })
@@ -435,9 +467,90 @@ multiverse_plot_data %>%
   facet_wrap(~term, scales = "free_y")
 ```
 
-#### Interaction plots
+#### Simple Slopes Effect Curves
+
+These curves are, in principle, the same as the effect size curves above. The difference is that the effect size of interest is a simple slope instead of a regression coefficient from the mixed model. There are four simple effects of interest:
+
+- The effect of task type when unpredictability is low
+- The effect of task type when unpredictability is high
+- The effect of unpredictability on the standard version
+- The effect of unpredictability on the ecological version
+
+The code below grabs this information from our multiverse analysis so I can visualize these effects. Note that I could also make a specification grid for each of these plots but I opted not to for brevity.
 
 ```{r fig.showtext = T, fig.height=3.5}
+# Get the simple slopes tests from our giant list
+multiverse_ss <- map_df(multiverse_models, function(x){
+  decisions <- x$decisions %>% 
+    gather(key,value,-decision,-variable) %>% 
+    unite(grid_vars, variable, key) %>% 
+    spread(grid_vars, value)
+  
+  simple_slopes <- 
+    bind_rows(
+      x$mod_sim_slopes$unp$slopes %>% 
+        rename_all(~c("value", "slope", "se","lower","upper","t.value","p.value")) %>% 
+        mutate(group = "unp"),
+      x$mod_sim_slopes$task$slopes %>% 
+        rename_all(~c("value", "slope", "se","lower","upper","t.value","p.value")) %>% 
+        mutate(group = "task"),
+    )
+  
+  bind_cols(simple_slopes, decisions)
+}) %>% 
+  mutate(simple_slope = case_when(group=="unp" & value ==  1 ~ "High Unp",
+                                  group=="unp" & value == -1 ~ "Low Unp",
+                                  group=="task" & value ==  1 ~ "Ecological",
+                                  group=="task" & value == -1 ~ "Standard"),
+         simple_slope = factor(simple_slope, levels = c("Low Unp","High Unp", "Standard", "Ecological")),
+         p_value = case_when(p.value <= .05 ~ "p <= .05",
+                             p.value >  .05 ~ "p > .05"),
+         p_value = factor(p_value, levels = c("p > .05","p <= .05")))
+```
+
+##### Unpredictability
+
+This plot shows the effect of task type when unpredictability is low versus high.
+
+```{r fig.showtext = T, fig.height=3.5}
+multiverse_ss %>% 
+  filter(group == "unp") %>% 
+  group_by(group, value) %>% 
+  mutate(multiverse_set = as.numeric(fct_reorder(decision, slope))) %>% 
+  ggplot(aes(x = multiverse_set, y = slope, color = p_value)) +
+  geom_point() +
+  scale_x_continuous("\nMultiverse") +
+  scale_y_continuous("Estimate\n") +
+  scale_color_manual(values = c("gray","#f0506e")) +
+  scale_fill_manual(values = c("gray","#f0506e")) +
+  facet_wrap(~simple_slope)
+```
+
+##### Task Type
+
+This plot shows the effect of unpredictability when task type is the standard versus ecological version.
+
+```{r fig.showtext = T, fig.height=3.5}
+multiverse_ss %>% 
+  filter(group == "task") %>% 
+  group_by(group, value) %>% 
+  mutate(multiverse_set = as.numeric(fct_reorder(decision, slope))) %>% 
+  ggplot(aes(x = multiverse_set, y = slope, color = p_value)) +
+  geom_point() +
+  scale_x_continuous("\nMultiverse") +
+  scale_y_continuous("Estimate\n") +
+  scale_color_manual(values = c("gray","#f0506e")) +
+  scale_fill_manual(values = c("gray","#f0506e")) +
+  facet_wrap(~simple_slope)
+```
+
+#### Interaction plots
+
+Here, I simply plot interactions based on high versus low unpredictability and task-type. More specifically, the predicted level of performance when unpredictability is high versus low and on the standard versus ecological version.
+
+Each line represents an interaction from a single dataset in the multiverse. I've broken the plots out into panels so the overall pattern is more visible. I've also made one plot with unpredictability on the x-axis and separate panels for task type. I made another plot with these flipped.
+
+```{r }
 # Get the predicted points out of our giant list
 multiverse_effects <- map_df(multiverse_models, function(x){
   decisions <- x$decisions %>% 
@@ -451,7 +564,11 @@ multiverse_effects <- map_df(multiverse_models, function(x){
     multiverse_plot_data %>% filter(str_detect(mod_term,"\\:")) %>% select(term, p_value, decision),
     by = "decision"
   )
+```
 
+##### Effect of Unpredictability Across Task Type
+
+```{r fig.showtext = T, fig.height=3.5}
 # Plot the interactions
 multiverse_effects %>% 
   mutate(group = factor(group, levels = c(-1,1), labels = c("Standard Version","Ecological Version"))) %>% 
@@ -461,6 +578,25 @@ multiverse_effects %>%
   scale_y_continuous("Performance\n") +
   scale_color_manual(values = c("gray","#f0506e")) +
   facet_wrap(~group) 
+```
+
+##### Effect of Task Type Across Unprdictability
+
+```{r fig.showtext = T, fig.height=3.5}
+# Plot the interactions
+multiverse_effects %>% 
+  mutate(
+    group_jitter = jitter(as.numeric(group), amount = .1),
+    group        = factor(group, levels = c(-1,1), labels = c("Standard Version","Ecological Version")),
+    x            = factor(x, levels = c(-1,1), labels = c("Low Unpredictability","High Unpredictability"))
+  ) %>% 
+  ggplot(aes(x = group_jitter, y = predicted, group = decision, color = p_value)) +
+  geom_line(alpha = .25,size = .25, show.legend = F) +
+  geom_point(alpha = .25,size = .25, show.legend = F) +
+  scale_x_continuous("\nTask Type", breaks = c(1,2), labels = c("Standard","Ecological")) +
+  scale_y_continuous("Performance\n") +
+  scale_color_manual(values = c("gray","#f0506e")) +
+  facet_wrap(~x) 
 ```
 
 And that's it! My first foray into multiverse style analysis.

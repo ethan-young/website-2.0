@@ -3,9 +3,9 @@ title: A Multiverse Analysis of Interaction Effects
 description: Running a multiverse moderation analysis over arbitrary data decisions and plotting the results
 author: ''
 date: '2020-08-16'
-updated: "August 25, 2020"
+updated: "August 27, 2020"
 tocbot: true
-slug: mutliverse
+slug: multiverse
 categories: []
 tags:
   - R
@@ -18,17 +18,18 @@ tags:
 
 <div id="introduction" class="section level3">
 <h3>Introduction</h3>
-<p>In recent years, there is a growing interest in multiverse analysis, a technique for compiling all possible datasets that could result from different data processing decisions. Once compiled, researchers can run their analysis of interest across all datasets in the mulitverse to see how sensitive their models are to the decisions that produced the underlying data. In this post, I attempt my own multiverse analysis using simulated data.</p>
+<p>In recent years, there is a growing interest in multiverse analysis, a technique for compiling all possible datasets that could result from different data processing decisions. Once compiled, researchers can run their analysis of interest across all datasets in the multiverse to see how sensitive their models are to the decisions that produced the underlying data. In this post, I attempt my own multiverse analysis using simulated data.</p>
 <p>Note that there are already many good places to learn more about the multiverse analysis, including papers, blog posts, and code examples. My intention is to understand the mechanics the technique without the aid of a pre-written package. My goal is to deepen my own understanding and to flesh out the different ways to use the technique and compile/visualize the results.</p>
 <div id="arbitrary-vs.-non-arbitrary-decisions" class="section level4">
 <h4>Arbitrary vs. Non-Arbitrary Decisions</h4>
-<p>Processing raw data involves many steps, such as cleaning, preparing, and creating analysis variables (among many others). Such decisions eventually produce an analysis-ready dataset, but making (even slightly) different decisions will produce a different dataset. And so emerges the multiverse: all possible datasets that could emerge from different data processing decisions (see also the <a href="https://www.americanscientist.org/article/the-statistical-crisis-in-science">garden of forking paths</a>).</p>
-<p>An important distinction in multiverse analyses is arbitrary and non-arbitrary nature of particular decisions. Arbitrary decisions ar those that</p>
+<p>Processing raw data involves many steps, such as cleaning, preparing, and creating analysis variables (among many others). Such decisions eventually produce an analysis-ready dataset, but making (even slightly) different decisions will produce a different dataset. And so emerges the multiverse: all possible datasets that could generated from different data processing decisions (see also the <a href="https://www.americanscientist.org/article/the-statistical-crisis-in-science">garden of forking paths</a>).</p>
+<p>An important distinction in multiverse analysis is between arbitrary and non-arbitrary decisions. Arbitrary decisions are those that:</p>
 <ol style="list-style-type: decimal">
 <li>are not expected to influence results and,</li>
 <li>equally defensible/have reasonable justifications</li>
 </ol>
-<p>For example, whether to remove outliers at +/- 3 or 2.5 standard deviations could be arbitrary. Neither cutoff is theoretically informed and both are equally defensible. In contrast, non-arbitrary choices are expected to affect results, either for theoretical or known empirical reasons. For example, theory might suggest controlling for a confound is crucial for interpreting results. Empirically, controlling for a confound may aid interpretation because it is already known to correlates with the outcome of interest.</p>
+<p>For example, whether to remove outliers at +/- 3 or 2.5 standard deviations could be arbitrary. Neither cutoff is theoretically informed and both are equally defensible.</p>
+<p>In contrast, non-arbitrary choices are expected to affect results, either for theoretical or empirical reasons. For example, theory might suggest controlling for a confound is crucial for interpreting results. Empirically, controlling for a confound may aid interpretation because such a confound is known to correlate with the outcome of interest and should be accounting for in each our analysis.</p>
 <p>Multiverse analysis should be ran over all possible <strong>arbitrary</strong> decisions. This is important because the multiverse can quickly become unnecessarily large and difficult to interpret. Ideally, the multiverse will comprise all datasets that, by themselves, would make sense to analyze and interpret individually.</p>
 </div>
 <div id="setup" class="section level4">
@@ -40,6 +41,7 @@ library(lmerTest)
 library(broom.mixed)
 library(tidymodels)
 library(ggeffects)
+library(interactions)
 library(showtext)
 
 # Custom font for ggplot
@@ -89,6 +91,7 @@ sim_data &lt;-
     dv_std      = intercept + iv_unp * -(.2) + rnorm(500, mean = 0, 2),
     dv_eco      = intercept + iv_unp *  (.1) + rnorm(500, mean = 0, 2)
   )</code></pre>
+<p>And her are the first 10 rows of the simulated data:</p>
 <table class="uk-table uk-table-small uk-table-divider">
 <thead>
 <tr>
@@ -96,10 +99,13 @@ sim_data &lt;-
 id
 </th>
 <th style="text-align:right;">
-intercept
+iv_unp
 </th>
 <th style="text-align:right;">
-iv_unp
+dv_std
+</th>
+<th style="text-align:right;">
+dv_eco
 </th>
 <th style="text-align:right;">
 ex_sample
@@ -116,12 +122,6 @@ ex_att
 <th style="text-align:right;">
 ex_imp
 </th>
-<th style="text-align:right;">
-dv_std
-</th>
-<th style="text-align:right;">
-dv_eco
-</th>
 </tr>
 </thead>
 <tbody>
@@ -130,10 +130,13 @@ dv_eco
 1
 </td>
 <td style="text-align:right;">
-1.76
+-1.42
 </td>
 <td style="text-align:right;">
--1.42
+2.02
+</td>
+<td style="text-align:right;">
+5.05
 </td>
 <td style="text-align:right;">
 1
@@ -150,22 +153,19 @@ dv_eco
 <td style="text-align:right;">
 0
 </td>
-<td style="text-align:right;">
-2.02
-</td>
-<td style="text-align:right;">
-5.05
-</td>
 </tr>
 <tr>
 <td style="text-align:right;">
 2
 </td>
 <td style="text-align:right;">
-2.13
+-2.47
 </td>
 <td style="text-align:right;">
--2.47
+4.82
+</td>
+<td style="text-align:right;">
+4.53
 </td>
 <td style="text-align:right;">
 0
@@ -182,22 +182,19 @@ dv_eco
 <td style="text-align:right;">
 0
 </td>
-<td style="text-align:right;">
-4.82
-</td>
-<td style="text-align:right;">
-4.53
-</td>
 </tr>
 <tr>
 <td style="text-align:right;">
 3
 </td>
 <td style="text-align:right;">
--0.33
+0.48
 </td>
 <td style="text-align:right;">
-0.48
+1.49
+</td>
+<td style="text-align:right;">
+-0.08
 </td>
 <td style="text-align:right;">
 0
@@ -214,22 +211,19 @@ dv_eco
 <td style="text-align:right;">
 0
 </td>
-<td style="text-align:right;">
-1.49
-</td>
-<td style="text-align:right;">
--0.08
-</td>
 </tr>
 <tr>
 <td style="text-align:right;">
 4
 </td>
 <td style="text-align:right;">
--1.36
+-0.94
 </td>
 <td style="text-align:right;">
--0.94
+-2.27
+</td>
+<td style="text-align:right;">
+-5.54
 </td>
 <td style="text-align:right;">
 1
@@ -246,22 +240,19 @@ dv_eco
 <td style="text-align:right;">
 0
 </td>
-<td style="text-align:right;">
--2.27
-</td>
-<td style="text-align:right;">
--5.54
-</td>
 </tr>
 <tr>
 <td style="text-align:right;">
 5
 </td>
 <td style="text-align:right;">
-1.82
+3.33
 </td>
 <td style="text-align:right;">
-3.33
+0.23
+</td>
+<td style="text-align:right;">
+2.36
 </td>
 <td style="text-align:right;">
 0
@@ -278,22 +269,19 @@ dv_eco
 <td style="text-align:right;">
 0
 </td>
-<td style="text-align:right;">
-0.23
-</td>
-<td style="text-align:right;">
-2.36
-</td>
 </tr>
 <tr>
 <td style="text-align:right;">
 6
 </td>
 <td style="text-align:right;">
--5.45
+-0.16
 </td>
 <td style="text-align:right;">
--0.16
+-4.52
+</td>
+<td style="text-align:right;">
+-4.39
 </td>
 <td style="text-align:right;">
 1
@@ -310,12 +298,6 @@ dv_eco
 <td style="text-align:right;">
 0
 </td>
-<td style="text-align:right;">
--4.52
-</td>
-<td style="text-align:right;">
--4.39
-</td>
 </tr>
 </tbody>
 </table>
@@ -323,7 +305,7 @@ dv_eco
 </div>
 <div id="the-arbitrary-data-decision-grid" class="section level3">
 <h3>The Arbitrary Data Decision Grid</h3>
-<p>The first step in conducting the multiverse is to construct a grid of data-filtering and/or processing steps. The function <code>expand_grid()</code> creates all possible combinations of these decisions. My decisions are as follows:</p>
+<p>The first step in conducting creating a multiverse is to construct a grid of data-filtering and/or processing decisions. The function <code>expand_grid()</code> creates all possible combinations of these decisions. My decisions are as follows:</p>
 <ul>
 <li>Include or exclude the smaller subsample</li>
 <li>Include or exclude people who failed attention checks</li>
@@ -625,7 +607,7 @@ Covariate
 </div>
 <div id="create-the-multiverse" class="section level3">
 <h3>Create the Multiverse</h3>
-<p>After creating the decision grid, I can place the filtering instructions inside a loop to iterate over the all possible decisions combinations. This creates a multiverse of 432 data sets. At the end of each iteration, I save a list of the data, sample size, and the specific decisions that produced the data. The result of this loop will be a single, large list of 432 elements.</p>
+<p>After creating the decision grid, I can place the filtering instructions inside a loop to iterate over all possible decision combinations. At the end of each iteration, I save a list of the data, sample size, and the specific decisions that produced the data. The result of this loop will be a single, large list of 432 elements.</p>
 <pre class="r"><code># Loop through the multiverse grid and create datasets accordingly
 multiverse_data &lt;-
   decision_grid %&gt;% 
@@ -655,13 +637,13 @@ multiverse_data &lt;-
     )
     
   })</code></pre>
-<p>Here is an example of the first element of this list:</p>
-<pre class="r"><code>multiverse_data[[1]]</code></pre>
+<p>Here is an example an element in this list:</p>
+<pre class="r"><code>multiverse_data[[123]]</code></pre>
 <pre><code>## $n
-## [1] 500
+## [1] 386
 ## 
 ## $data
-## # A tibble: 500 x 10
+## # A tibble: 386 x 10
 ##       id intercept iv_unp ex_sample ex_csd ex_sped ex_att ex_imp dv_std  dv_eco
 ##    &lt;int&gt;     &lt;dbl&gt;  &lt;dbl&gt;     &lt;int&gt;  &lt;dbl&gt;   &lt;int&gt;  &lt;int&gt;  &lt;int&gt;  &lt;dbl&gt;   &lt;dbl&gt;
 ##  1     1     1.76  -1.42          1  2.07        0      0      0  2.02   5.05  
@@ -674,22 +656,22 @@ multiverse_data &lt;-
 ##  8     8    -0.829  0.876         0 -1.80        0      0      0 -0.286 -0.365 
 ##  9     9    -0.852 -2.15          0 -0.205       0      0      0 -2.57  -2.90  
 ## 10    10    -2.76  -0.234         1  1.29        0      0      0 -3.04  -5.08  
-## # … with 490 more rows
+## # … with 376 more rows
 ## 
 ## $decisions
 ## # A tibble: 7 x 5
-##   decision variable  exp                   variable_group name            
-##   &lt;chr&gt;    &lt;chr&gt;     &lt;chr&gt;                 &lt;chr&gt;          &lt;chr&gt;           
-## 1 1        ex_sample ex_sample %in% c(0,1) Sample         Both Samples    
-## 2 1        ex_att    ex_att %in% c(0,1)    Attention      1 &gt;= missed     
-## 3 1        ex_imp    ex_imp %in% c(0,1)    Impaired       1 &gt;= impairments
-## 4 1        ex_sped   ex_sped %in% c(0,1)   Sp.Ed.         Sp.Ed. included 
-## 5 1        dv_std    scale(dv_std) &gt; -10   Std. Task      All scores      
-## 6 1        dv_eco    scale(dv_eco) &gt; -10   Eco. Task      All scores      
-## 7 1        ex_csd    0                     CSD            Not included</code></pre>
+##   decision variable  exp                   variable_group name           
+##   &lt;chr&gt;    &lt;chr&gt;     &lt;chr&gt;                 &lt;chr&gt;          &lt;chr&gt;          
+## 1 209      ex_sample ex_sample %in% c(0,1) Sample         Both Samples   
+## 2 209      ex_att    ex_att == 0           Attention      None missed    
+## 3 209      ex_imp    ex_imp == 0           Impaired       No impairments 
+## 4 209      ex_sped   ex_sped == 0          Sp.Ed.         Sp.Ed. excluded
+## 5 209      dv_std    scale(dv_std) &gt; -2.5  Std. Task      &gt; -2.5 SD      
+## 6 209      dv_eco    scale(dv_eco) &gt; -10   Eco. Task      All scores     
+## 7 209      ex_csd    1                     CSD            Residualized</code></pre>
 <div id="check-sample-sizes" class="section level4">
 <h4>Check Sample Sizes</h4>
-<p>One issue that could arise in multiverse analysis is the sample sizes of individual datasets. If a set of decisions greatly reduces the overall sample size, it may not make sense to analyze the associated dataset. To check this issue, I can plot the distribution of sample sizes as a function of the decisions in our decision grid:</p>
+<p>One issue that could arise in multiverse analysis is that the sample sizes of some individual datasets may be very small, at least compared to the full dataset. If this occurs, it may not make sense to analyze the datasets with small sample sizes. To check this issue, I can plot the distribution of sample sizes as a function of the decisions in our decision grid:</p>
 <pre class="r"><code>mulitverse_sample_size &lt;- 
   map_df(multiverse_data, function(x){
   # Grab the decisions flatten them out
@@ -703,6 +685,12 @@ multiverse_data &lt;-
 })
 
 mulitverse_sample_size %&gt;% 
+  ggplot(aes(x = n)) +
+  geom_histogram(color = &quot;black&quot;, bins = 15) +
+  labs(title = &quot;Histogram of Multiverse Sample Sizes&quot;, x = &quot;\nSample Size&quot;, y = &quot;Number of Datasets\n&quot;)</code></pre>
+<p><img src="/posts/2020-08-16-multiverse_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>In my case, the minimum sample size was 304 and the maximum was 500. We can also look at which data processing decisions affected sample size the most:</p>
+<pre class="r"><code>mulitverse_sample_size %&gt;% 
   select(-ends_with(&quot;exp&quot;)) %&gt;% 
   gather(variable, exclusion, -decision, -n) %&gt;%
   mutate(variable = str_replace(variable, &quot;_(name)$|_(variable_group)$&quot;, &quot;.\\1\\2&quot;)) %&gt;% 
@@ -710,23 +698,26 @@ mulitverse_sample_size %&gt;%
   spread(group, exclusion) %&gt;% 
   arrange(decision, variable_group) %&gt;% 
   ggplot() +
-  geom_boxplot(aes(x = name, y = n), notch = T)  +
+  geom_boxplot(aes(x = name, y = n), notch = T, width = .5)  +
   scale_x_discrete(&quot;Exclusion Criteria&quot;) +
   scale_y_continuous(&quot;Sample Size (max = 500)\n&quot;) +
   ggtitle(&quot;Sample Sizes in the Multiverse&quot;) +
   facet_wrap(~variable_group, scales = &quot;free&quot;, ncol = 2)</code></pre>
-<p><img src="/posts/2020-08-16-mutliverse_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p><img src="/posts/2020-08-16-multiverse_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
 </div>
 </div>
 <div id="analyze-the-multiverse" class="section level3">
 <h3>Analyze the Multiverse</h3>
-<p>I’ve generated our multiverse of datasets, now I need to analyze it. My strategy is to loop over my <code>multiverse_data</code> object. First, I extract the decisions that produced the data to know what we should do with <code>ex_csd</code> (i.e., create residualized scores, include it as a covariate, or do nothing). Then I restructure the data into long format so I can run a mixed model with random intercepts to look at the main effect of <code>iv_unp</code> (between subjects), main effect of <code>task_type</code> (standard or ecological version, within subjects), and their interaction.</p>
+<p>I’ve generated our multiverse of datasets, now I need to analyze it. My strategy is to loop over my <code>multiverse_data</code> object. First, I extract the decisions that produced the data to know what we should do with <code>ex_csd</code> (i.e., create residualized scores, include it as a covariate, or do nothing).</p>
+<p>Next, I restructure the data into long format so I can run a mixed model with random intercepts to look at the main effect of <code>iv_unp</code> (between subjects), main effect of <code>task_type</code> (standard or ecological version, within subjects), and their interaction.</p>
+<p>After running the mixed model, I also do a simple slopes test to evaluate (in the context of an interaction) the simple effects of high versus low unpredictability and standard versus ecological versions of the test.</p>
 <p>At the end of each iteration, I compile another list with the following components:</p>
 <ul>
 <li>The data</li>
 <li>The decisions that produced the data</li>
 <li>What was done with <code>ex_csd</code></li>
 <li>The entire mixed model object (e.g. <code>lmer</code> object)</li>
+<li>The simple slopes test object</li>
 <li>A tidied table of the coefficients from the model</li>
 <li>A table of predicted effects based on +/- 1 SD of <code>iv_unp</code> and <code>task_type</code> (standard or ecological) to visualize interactions</li>
 </ul>
@@ -779,6 +770,15 @@ multiverse_models &lt;-
       mod_effects &lt;- ggpredict(mod, terms = c(&quot;iv_unp_z [-1,1]&quot;, &quot;task_type [-1,1]&quot;))
     }
     
+    # Simple slopes test for Unpredictability and task type
+    if(residualize){
+      mod_ss_unp &lt;- sim_slopes(mod, pred = &quot;task_type&quot;,  modx = &quot;iv_unp_resid_z&quot;, modx.values = c(-1,1))
+      mod_ss_task &lt;- sim_slopes(mod, pred = &quot;iv_unp_resid_z&quot;, modx = &quot;task_type&quot;, modx.values = c(-1,1))
+    } else{
+      mod_ss_unp &lt;- sim_slopes(mod, pred = &quot;task_type&quot;, modx = &quot;iv_unp_z&quot;, modx.values = c(-1,1))
+      mod_ss_task &lt;- sim_slopes(mod, pred = &quot;iv_unp_z&quot;, modx = &quot;task_type&quot;, modx.values = c(-1,1))
+    }
+    
     # Get the results and turn them into a data.frame
     mod_tidy &lt;- 
       mod %&gt;% 
@@ -793,6 +793,7 @@ multiverse_models &lt;-
       covariate    = covariate,
       mod          = mod,
       mod_tidy     = mod_tidy,
+      mod_sim_slopes = list(unp = mod_ss_unp, task = mod_ss_task),
       mod_effects  = mod_effects
     )
   })</code></pre>
@@ -860,7 +861,7 @@ multiverse_plot_data &lt;-
   )
 
 multiverse_effect_curve</code></pre>
-<p><img src="/posts/2020-08-16-mutliverse_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p><img src="/posts/2020-08-16-multiverse_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
 </div>
 <div id="specification-grid" class="section level4">
 <h4>Specification Grid</h4>
@@ -880,7 +881,7 @@ multiverse_effect_curve</code></pre>
   theme(strip.background.x = element_blank(), strip.text.x = element_blank(), strip.placement = &quot;outside&quot;)
 
 multiverse_spec_grid</code></pre>
-<p><img src="/posts/2020-08-16-mutliverse_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p><img src="/posts/2020-08-16-multiverse_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
 </div>
 <div id="creating-the-full-multiverse-plot" class="section level4">
 <h4>Creating the Full Multiverse Plot</h4>
@@ -892,7 +893,7 @@ multiverse_spec_grid</code></pre>
   axis = &quot;lr&quot;,
   rel_heights = c(.25,.75)
 )</code></pre>
-<p><img src="/posts/2020-08-16-mutliverse_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p><img src="/posts/2020-08-16-multiverse_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
 </div>
 <div id="the-histogram-of-p-values" class="section level4">
 <h4>The Histogram of p-values</h4>
@@ -903,10 +904,82 @@ multiverse_spec_grid</code></pre>
   scale_x_continuous(&quot;\nMultiverse p-value&quot;) +
   scale_y_continuous(&quot;Count&quot;) +
   facet_wrap(~term, scales = &quot;free_y&quot;)</code></pre>
-<p><img src="/posts/2020-08-16-mutliverse_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p><img src="/posts/2020-08-16-multiverse_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+</div>
+<div id="simple-slopes-effect-curves" class="section level4">
+<h4>Simple Slopes Effect Curves</h4>
+<p>These curves are, in principle, the same as the effect size curves above. The difference is that the effect size of interest is a simple slope instead of a regression coefficient from the mixed model. There are four simple effects of interest:</p>
+<ul>
+<li>The effect of task type when unpredictability is low</li>
+<li>The effect of task type when unpredictability is high</li>
+<li>The effect of unpredictability on the standard version</li>
+<li>The effect of unpredictability on the ecological version</li>
+</ul>
+<p>The code below grabs this information from our multiverse analysis so I can visualize these effects. Note that I could also make a specification grid for each of these plots but I opted not to for brevity.</p>
+<pre class="r"><code># Get the simple slopes tests from our giant list
+multiverse_ss &lt;- map_df(multiverse_models, function(x){
+  decisions &lt;- x$decisions %&gt;% 
+    gather(key,value,-decision,-variable) %&gt;% 
+    unite(grid_vars, variable, key) %&gt;% 
+    spread(grid_vars, value)
+  
+  simple_slopes &lt;- 
+    bind_rows(
+      x$mod_sim_slopes$unp$slopes %&gt;% 
+        rename_all(~c(&quot;value&quot;, &quot;slope&quot;, &quot;se&quot;,&quot;lower&quot;,&quot;upper&quot;,&quot;t.value&quot;,&quot;p.value&quot;)) %&gt;% 
+        mutate(group = &quot;unp&quot;),
+      x$mod_sim_slopes$task$slopes %&gt;% 
+        rename_all(~c(&quot;value&quot;, &quot;slope&quot;, &quot;se&quot;,&quot;lower&quot;,&quot;upper&quot;,&quot;t.value&quot;,&quot;p.value&quot;)) %&gt;% 
+        mutate(group = &quot;task&quot;),
+    )
+  
+  bind_cols(simple_slopes, decisions)
+}) %&gt;% 
+  mutate(simple_slope = case_when(group==&quot;unp&quot; &amp; value ==  1 ~ &quot;High Unp&quot;,
+                                  group==&quot;unp&quot; &amp; value == -1 ~ &quot;Low Unp&quot;,
+                                  group==&quot;task&quot; &amp; value ==  1 ~ &quot;Ecological&quot;,
+                                  group==&quot;task&quot; &amp; value == -1 ~ &quot;Standard&quot;),
+         simple_slope = factor(simple_slope, levels = c(&quot;Low Unp&quot;,&quot;High Unp&quot;, &quot;Standard&quot;, &quot;Ecological&quot;)),
+         p_value = case_when(p.value &lt;= .05 ~ &quot;p &lt;= .05&quot;,
+                             p.value &gt;  .05 ~ &quot;p &gt; .05&quot;),
+         p_value = factor(p_value, levels = c(&quot;p &gt; .05&quot;,&quot;p &lt;= .05&quot;)))</code></pre>
+<div id="unpredictability" class="section level5">
+<h5>Unpredictability</h5>
+<p>This plot shows the effect of task type when unpredictability is low versus high.</p>
+<pre class="r"><code>multiverse_ss %&gt;% 
+  filter(group == &quot;unp&quot;) %&gt;% 
+  group_by(group, value) %&gt;% 
+  mutate(multiverse_set = as.numeric(fct_reorder(decision, slope))) %&gt;% 
+  ggplot(aes(x = multiverse_set, y = slope, color = p_value)) +
+  geom_point() +
+  scale_x_continuous(&quot;\nMultiverse&quot;) +
+  scale_y_continuous(&quot;Estimate\n&quot;) +
+  scale_color_manual(values = c(&quot;gray&quot;,&quot;#f0506e&quot;)) +
+  scale_fill_manual(values = c(&quot;gray&quot;,&quot;#f0506e&quot;)) +
+  facet_wrap(~simple_slope)</code></pre>
+<p><img src="/posts/2020-08-16-multiverse_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+</div>
+<div id="task-type" class="section level5">
+<h5>Task Type</h5>
+<p>This plot shows the effect of unpredictability when task type is the standard versus ecological version.</p>
+<pre class="r"><code>multiverse_ss %&gt;% 
+  filter(group == &quot;task&quot;) %&gt;% 
+  group_by(group, value) %&gt;% 
+  mutate(multiverse_set = as.numeric(fct_reorder(decision, slope))) %&gt;% 
+  ggplot(aes(x = multiverse_set, y = slope, color = p_value)) +
+  geom_point() +
+  scale_x_continuous(&quot;\nMultiverse&quot;) +
+  scale_y_continuous(&quot;Estimate\n&quot;) +
+  scale_color_manual(values = c(&quot;gray&quot;,&quot;#f0506e&quot;)) +
+  scale_fill_manual(values = c(&quot;gray&quot;,&quot;#f0506e&quot;)) +
+  facet_wrap(~simple_slope)</code></pre>
+<p><img src="/posts/2020-08-16-multiverse_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+</div>
 </div>
 <div id="interaction-plots" class="section level4">
 <h4>Interaction plots</h4>
+<p>Here, I simply plot interactions based on high versus low unpredictability and task-type. More specifically, the predicted level of performance when unpredictability is high versus low and on the standard versus ecological version.</p>
+<p>Each line represents an interaction from a single dataset in the multiverse. I’ve broken the plots out into panels so the overall pattern is more visible. I’ve also made one plot with unpredictability on the x-axis and separate panels for task type. I made another plot with these flipped.</p>
 <pre class="r"><code># Get the predicted points out of our giant list
 multiverse_effects &lt;- map_df(multiverse_models, function(x){
   decisions &lt;- x$decisions %&gt;% 
@@ -919,9 +992,10 @@ multiverse_effects &lt;- map_df(multiverse_models, function(x){
   left_join(
     multiverse_plot_data %&gt;% filter(str_detect(mod_term,&quot;\\:&quot;)) %&gt;% select(term, p_value, decision),
     by = &quot;decision&quot;
-  )
-
-# Plot the interactions
+  )</code></pre>
+<div id="effect-of-unpredictability-across-task-type" class="section level5">
+<h5>Effect of Unpredictability Across Task Type</h5>
+<pre class="r"><code># Plot the interactions
 multiverse_effects %&gt;% 
   mutate(group = factor(group, levels = c(-1,1), labels = c(&quot;Standard Version&quot;,&quot;Ecological Version&quot;))) %&gt;% 
   ggplot(aes(x = x, y = predicted, group = decision, color = p_value)) +
@@ -930,8 +1004,27 @@ multiverse_effects %&gt;%
   scale_y_continuous(&quot;Performance\n&quot;) +
   scale_color_manual(values = c(&quot;gray&quot;,&quot;#f0506e&quot;)) +
   facet_wrap(~group) </code></pre>
-<p><img src="/posts/2020-08-16-mutliverse_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p><img src="/posts/2020-08-16-multiverse_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+</div>
+<div id="effect-of-task-type-across-unprdictability" class="section level5">
+<h5>Effect of Task Type Across Unprdictability</h5>
+<pre class="r"><code># Plot the interactions
+multiverse_effects %&gt;% 
+  mutate(
+    group_jitter = jitter(as.numeric(group), amount = .1),
+    group        = factor(group, levels = c(-1,1), labels = c(&quot;Standard Version&quot;,&quot;Ecological Version&quot;)),
+    x            = factor(x, levels = c(-1,1), labels = c(&quot;Low Unpredictability&quot;,&quot;High Unpredictability&quot;))
+  ) %&gt;% 
+  ggplot(aes(x = group_jitter, y = predicted, group = decision, color = p_value)) +
+  geom_line(alpha = .25,size = .25, show.legend = F) +
+  geom_point(alpha = .25,size = .25, show.legend = F) +
+  scale_x_continuous(&quot;\nTask Type&quot;, breaks = c(1,2), labels = c(&quot;Standard&quot;,&quot;Ecological&quot;)) +
+  scale_y_continuous(&quot;Performance\n&quot;) +
+  scale_color_manual(values = c(&quot;gray&quot;,&quot;#f0506e&quot;)) +
+  facet_wrap(~x) </code></pre>
+<p><img src="/posts/2020-08-16-multiverse_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
 <p>And that’s it! My first foray into multiverse style analysis.</p>
+</div>
 </div>
 </div>
 <div class="footnotes">
