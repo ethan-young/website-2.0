@@ -38,7 +38,7 @@ tags$div(
     HTML("<h3>First Authored Publications <a href = '/publications/' class = 'uk-icon-link uk-margin-left' uk-icon='chevron-right' uk-tooltip='View All'></a></h3>")
   ),
   HTML("<div class = 'uk-child-width-1-2@m uk-grid-match' uk-grid>"),
-  HTML( 
+  HTML(
     pubs %>%
       arrange(desc(year)) %>%
       mutate(
