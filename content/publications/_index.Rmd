@@ -7,7 +7,7 @@ description: Journal articles, book chapters, and conference presentations
 library(tidyverse)
 library(glue)
 library(htmltools)
-library(googlesheets4)
+library(googlesheets4) 
 ```
 
 ```{r echo=F, message=F, warning=F, results='asis'}
