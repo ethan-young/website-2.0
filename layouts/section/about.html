@@ -19,6 +19,7 @@
 <div id = "article-top" class = 'uk-margin-bottom uk-position-relative'>
   <h1 class = 'uk-heading-medium uk-padding uk-text-center uk-position-relative'>{{ .Params.title }}</h1>
   <h4 class = "uk-text-center uk-text-italic uk-position-relative uk-padding uk-padding-remove-bottom uk-margin-remove-top">{{ .Params.description }}</h4>
+  <img class="uk-border-circle uk-align-center" src="../cv-pdf/pic1.jpeg" width="200" height="200" alt="Border circle">
   <article id = "my-content" class = 'uk-container uk-container-xsmall uk-position-relative uk-padding-large uk-padding-remove-top'>
   {{ partial "toc" . }}
   {{.Content}}

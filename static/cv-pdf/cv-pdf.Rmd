@@ -44,7 +44,7 @@ header-includes:
 \hfill
 \begin{minipage}{5cm}
   \begin{tikzpicture}[baseline=(ola.center),inner sep=0pt]
-    \clip (0,0)  circle (2.25cm) node (ola) {\includegraphics[width=4.5cm]{pic.jpeg}};
+    \clip (0,0)  circle (2.25cm) node (ola) {\includegraphics[width=4.5cm]{pic1.jpeg}};
   \end{tikzpicture}
 \end{minipage}
 \hfill
@@ -198,7 +198,7 @@ walk(journals, function(x){
 })
 
 articles <- pubs %>% 
-  filter(pub_type=="journal", year != 'under-review') %>% 
+  filter(pub_type=="journal", ! year %in% c('under-review','in-progress')) %>% 
   arrange(desc(year)) %>% 
   mutate(count = 1:n()) %>% 
   group_by(year) %>%

@@ -40,11 +40,11 @@ div.footnotes:before{
   <p>Posted on {{ .PublishDate.Format "January 2, 2006"}} &middot; <time class="post-time">{{ .ReadingTime }} minute read</time><br><span class = 'uk-text-muted uk-text-italic uk-text-small'>(last updated: {{ .Params.updated }})</span></p>
   {{range .Params.tags}}
     <a class = 'uk-button uk-button-text' href="{{ "/tags/" | relLangURL }}{{ . | urlize }}" class="small">{{.}}</a> &nbsp;
-  {{end}}
+  {{end}} 
   </div>
 </div>
 <br>
-<div id = "my-content" class = 'uk-container uk-container-xsmall uk-text-light uk-position-relative uk-padding-large uk-padding-remove-top'>
+<div id = "my-content" class = 'uk-container uk-container-xsmall uk-position-relative uk-padding-large uk-padding-remove-top'>
   {{ partial "toc" .}}
   <article class="uk-article uk-padding uk-padding-remove uk-padding-remove-top">
     {{ .Content }}
