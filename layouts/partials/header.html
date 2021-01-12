@@ -49,15 +49,23 @@
           <div class="uk-navbar-dropdown">
             <ul class="uk-nav uk-navbar-dropdown-nav">
               <li>
-                 <a href="/"><span class="uk-button-text uk-padding-remove-horizontal">Home</a> 
+                 <a href="/"><span class="uk-padding-remove-horizontal">Home</a> 
               </li>
+              <hr class = "uk-padding-remove">
               {{ $currentPage := . }}
               {{ range .Site.Menus.main }}
-              <li>
-                <a href="{{ .URL }}">
-                  <span class = "uk-button-text uk-padding-remove-horizontal">{{ .Name }}</span>
-                </a>
+              <li><a class = {{ if eq .URL "" }} "uk-link-reset" {{else}} "" {{end}} href = "{{ .URL}}">{{ .Name }}</a>
               </li>
+                {{ if .HasChildren }}
+                   {{ range .Children }}
+                   <li>
+                     <a href = "{{ .URL }}">
+                      <span >{{ .Name }}</span>
+                     </a>
+                   </li>
+                   {{ end }}
+                {{ end }}
+               </li>
               {{ end }}
             </ul>
           </div>
