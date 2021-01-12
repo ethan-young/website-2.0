@@ -1,6 +1,6 @@
 ---
 title: Visualizations
-description: A collection of my professionl and academic visualizations
+description: A collection of my professional and academic visualizations
 author: ''
 date: '2020-12-08'
 updated: "`r format(Sys.time(), '%B %d, %Y')`"
