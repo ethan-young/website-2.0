@@ -1,0 +1,84 @@
+{{ define "main" }}
+
+<style>
+  #article-top h4:after {
+    position: absolute;
+    content: '';
+    width: 40px;
+    height: 3px;
+    top: 0;
+    left: 50%;
+    margin-left: -20px;
+    background: #f0506e;
+  }
+  
+  aside{
+    position: relative;
+    top: auto;
+    left: calc(100% + 25px);
+    width: 200px;
+  }
+  
+  .footnote-back{
+    font-family: Lato;
+  }
+  
+div.footnotes:before{
+    content: "Footnotes";
+    font-size: 1rem;
+    font-weight: 700;
+  }
+  
+</style>
+
+<div class = 'uk-container-small uk-margin-auto uk-padding-small'>
+  <br>
+  <ul class="uk-breadcrumb">
+    <li><a href="/portfolio/">Portfolio</a></li>
+    <li><span>{{.Params.title}}</span></li>
+  </ul>
+  <h1 class = 'uk-heading-medium uk-padding-small uk-text-center uk-position-relative uk-text-bold '>{{ .Params.title }}</h1>
+</div>
+<div id = "article-top" class = 'uk-container uk-container-xsmall uk-margin-small-bottom uk-position-relative'>
+  <h4 class = "uk-text-center uk-text-italic uk-position-relative uk-padding uk-padding-remove-bottom uk-margin-remove-top uk-text-muted">{{ .Params.description }}</h4>
+  <div class = 'uk-text-center'>
+  <p><span class = 'uk-text-muted uk-text-italic uk-text-small'>(last updated: {{ .Params.updated }})</span></p>
+  </div>
+</div>
+<div id = "my-content">
+  {{ partial "toc" .}}
+  <article class="uk-article uk-padding uk-padding-remove uk-padding-remove-top">
+    {{ .Content }}
+  </article>
+</div>
+<script type="text/javascript">
+  
+  $(document).ready(function(){
+    new ClipboardJS('.copy-btn');
+    
+    var code_block = 1;
+    $("pre.r").each(function(){
+      var copy_id = "code-block-" + code_block
+      var button_id = "button-code-block-" + code_block
+      $(this).attr("id", copy_id)
+      var copied_code = $("#" + copy_id).text()
+      $(this).prepend(
+        "<button " + 
+        "onclick='UIkit.notification({message: \"Copied!\", timeout: 750, pos: \"bottom-right\"})' " +
+        "id = '"+ button_id + "'" +
+        "class='copy-btn uk-icon-link uk-align-right uk-position-inline '" + 
+        " uk-tooltip = 'copy to clipboard'" +
+        " uk-icon = 'icon: copy' " + 
+        "data-clipboard-text='" + copied_code + "'>"+
+        "</button>"
+        )
+      code_block += 1
+    });
+    
+    $(".footnotes").addClass("uk-text-small uk-padding uk-padding-remove-horizontal");
+    
+  });
+
+</script>
+
+{{ end }}

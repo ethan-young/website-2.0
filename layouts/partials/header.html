@@ -1,42 +1,43 @@
 <div class = "uk-visible@s">
-    <nav class="uk-dark uk-background-default"  uk-navbar>
-      <div class="uk-navbar-left">
-        <a href="/" class="uk-navbar-item uk-logo"><span class="uk-icon uk-margin-small-right uk-button-text">{{.Site.Title}}</a> 
-      </div>
-      <div class = "uk-navbar-center">
-        <ul class = "uk-navbar-nav">
-         {{ $currentPage := . }}
-         {{ range .Site.Menus.main }}
-         <li>
-           <a href="{{ .URL }}">
-             <span class = "uk-button-text uk-padding-remove-horizontal">{{ .Name }}</span>
-           </a>
-           {{ if .HasChildren }}
-           <div  class="uk-drop" uk-drop="pos: bottom-left; offset: 0;">
-             <ul class ="uk-navbar-nav">
-           {{ range .Children }}
-              <li>
-                <a href="{{ .URL }}" >
-                 <span class = "uk-button-text uk-padding-remove-horizontal">{{ .Name }}</span>
-                </a>
-              </li>
-           {{ end }}
-             </ul>
-           </div>
-           {{ end }}
-          </li>
+  <nav class="uk-dark uk-background-default uk-margin-remove " uk-navbar="mode: click; dropbar: true; dropbar-mode: push; ">
+    <div class="uk-navbar-left">
+      <a href="/" class="uk-navbar-item uk-logo"><span class="uk-icon uk-margin-small-right uk-button-text">{{.Site.Title}}</a> 
+    </div>
+    <div class = "uk-navbar-center">
+      <ul class = "uk-navbar-nav">
+       {{ $currentPage := . }}
+       {{ range .Site.Menus.main }}
+       <li>
+         <a href = "{{ .URL }}">
+           <span class = "uk-button-text uk-padding-remove-horizontal">{{ .Name }}</span>
+         </a>
+         {{ if .HasChildren }}
+         <div class = "uk-navbar-dropdown uk-padding-remove-top uk-margin-remove" uk-dropdown="pos: bottom-left">
+           <ul class = "uk-text-small uk-padding-remove uk-margin-remove" >
+            {{ range .Children }}
+            <li>
+              <a class = "uk-link-reset" href = "{{ .URL }}">
+               <span class = "uk-button-text uk-padding-remove-horizontal">{{ .Name }}</span>
+              </a>
+            </li>
+            {{ end }}
+           </ul>
+         </div>
          {{ end }}
-        </ul>
+        </li>
+       {{ end }}
+      </ul>
+    </div>
+    <div class = "uk-navbar-right uk-margin-small-right">
+      <div class = "uk-visible@l">
+        <form id = "search-by-container" class="uk-search uk-search-default uk-width-expand">
+          <a href="" class="uk-search-icon-flip" uk-search-icon></a>
+          <input id = "search-by" class="uk-search-input" type="search" placeholder="Search...">
+        </form>
       </div>
-      <div class = "uk-navbar-right uk-margin-small-right">
-        <div class = "uk-visible@l">
-          <form id = "search-by-container" class="uk-search uk-search-default uk-width-expand">
-            <a href="" class="uk-search-icon-flip" uk-search-icon></a>
-            <input id = "search-by" class="uk-search-input" type="search" placeholder="Search...">
-          </form>
-        </div>
-      </div>
-    </nav>
+    </div>
+  </nav>
+  <div class="uk-navbar-dropbar"></div>
   <hr class = 'uk-margin-remove'>
 </div>
 <div class="uk-position-relative uk-hidden@s">

@@ -5,6 +5,7 @@ description: "Drawing path diagrams from lavaan objects in ggplot2"
 date: '2018-12-23'
 updated: "`r format(Sys.time(), '%B %d, %Y')`"
 tocbot: true
+anchor_sections: false
 slug: sem-diagrams-for-lavaan-models
 categories: []
 tags:

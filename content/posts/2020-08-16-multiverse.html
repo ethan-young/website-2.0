@@ -3,7 +3,7 @@ title: A Multiverse Analysis of Interaction Effects
 description: Running a multiverse moderation analysis over arbitrary data decisions and plotting the results
 author: ''
 date: '2020-08-16'
-updated: "August 27, 2020"
+updated: "December 16, 2020"
 tocbot: true
 slug: multiverse
 categories: []
@@ -14,18 +14,19 @@ tags:
   - code
 ---
 
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
 
 
 <div id="introduction" class="section level3">
 <h3>Introduction</h3>
 <p>In recent years, there is a growing interest in multiverse analysis, a technique for compiling all possible datasets that could result from different data processing decisions. Once compiled, researchers can run their analysis of interest across all datasets in the multiverse to see how sensitive their models are to the decisions that produced the underlying data. In this post, I attempt my own multiverse analysis using simulated data.</p>
-<p>Note that there are already many good places to learn more about the multiverse analysis, including papers, blog posts, and code examples. My intention is to understand the mechanics the technique without the aid of a pre-written package. My goal is to deepen my own understanding and to flesh out the different ways to use the technique and compile/visualize the results.</p>
+<p>Note that there are already many good places to learn more about the multiverse analysis, including papers, blog posts, and code examples. My intention is to understand the mechanics of the technique without the aid of a pre-written package. My goal is to deepen my own understanding and to flesh out the different ways to use the technique and compile/visualize the results.</p>
 <div id="arbitrary-vs.-non-arbitrary-decisions" class="section level4">
 <h4>Arbitrary vs. Non-Arbitrary Decisions</h4>
-<p>Processing raw data involves many steps, such as cleaning, preparing, and creating analysis variables (among many others). Such decisions eventually produce an analysis-ready dataset, but making (even slightly) different decisions will produce a different dataset. And so emerges the multiverse: all possible datasets that could generated from different data processing decisions (see also the <a href="https://www.americanscientist.org/article/the-statistical-crisis-in-science">garden of forking paths</a>).</p>
+<p>Processing raw data involves many steps, such as cleaning, preparing, and creating analysis variables (among many others). Such decisions eventually produce an analysis-ready dataset, but making (even slightly) different decisions will produce a different dataset. And so emerges the multiverse: all possible datasets that could be generated from different data processing decisions (see also the <a href="https://www.americanscientist.org/article/the-statistical-crisis-in-science">garden of forking paths</a>).</p>
 <p>An important distinction in multiverse analysis is between arbitrary and non-arbitrary decisions. Arbitrary decisions are those that:</p>
 <ol style="list-style-type: decimal">
-<li>are not expected to influence results and,</li>
+<li>are not expected to influence results (or their effect is unknown) and,</li>
 <li>equally defensible/have reasonable justifications</li>
 </ol>
 <p>For example, whether to remove outliers at +/- 3 or 2.5 standard deviations could be arbitrary. Neither cutoff is theoretically informed and both are equally defensible.</p>
@@ -43,11 +44,9 @@ library(tidymodels)
 library(ggeffects)
 library(interactions)
 library(showtext)
-
 # Custom font for ggplot
 font_add_google(&quot;Lato&quot;)
 showtext_auto()
-
 # Set the ggplot2 theme
 theme_set(
   theme_light() +
@@ -71,7 +70,6 @@ theme_set(
 <p>These variables will be used to construct a multiverse of datasets.</p>
 <pre class="r"><code># Set the seed for reproducibility
 set.seed(12345)
-
 # Create some data
 sim_data &lt;- 
   tibble(
@@ -91,7 +89,7 @@ sim_data &lt;-
     dv_std      = intercept + iv_unp * -(.2) + rnorm(500, mean = 0, 2),
     dv_eco      = intercept + iv_unp *  (.1) + rnorm(500, mean = 0, 2)
   )</code></pre>
-<p>And her are the first 10 rows of the simulated data:</p>
+<p>And here are the first 10 rows of the simulated data:</p>
 <table class="uk-table uk-table-small uk-table-divider">
 <thead>
 <tr>
@@ -683,7 +681,6 @@ multiverse_data &lt;-
   # Add the decisions to the model table
   bind_cols(n = x$n, decisions)
 })
-
 mulitverse_sample_size %&gt;% 
   ggplot(aes(x = n)) +
   geom_histogram(color = &quot;black&quot;, bins = 15) +
@@ -813,7 +810,6 @@ multiverse_estimates &lt;-
     # Add the decisions to the model table
     bind_cols(x$mod_tidy, n = x$n, decisions)
   })
-
 # Only look at our main effects and interaction terms
 multiverse_plot_data &lt;- 
   multiverse_estimates %&gt;% 
@@ -859,7 +855,6 @@ multiverse_plot_data &lt;-
     axis.title.x = element_blank(),
     axis.ticks.x = element_blank()
   )
-
 multiverse_effect_curve</code></pre>
 <p><img src="/posts/2020-08-16-multiverse_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
 </div>
@@ -879,7 +874,6 @@ multiverse_effect_curve</code></pre>
   scale_color_manual(values = c(&quot;gray&quot;,&quot;#f0506e&quot;)) +
   facet_grid(variable_group~term, scales = &quot;free_y&quot;) +
   theme(strip.background.x = element_blank(), strip.text.x = element_blank(), strip.placement = &quot;outside&quot;)
-
 multiverse_spec_grid</code></pre>
 <p><img src="/posts/2020-08-16-multiverse_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
 </div>

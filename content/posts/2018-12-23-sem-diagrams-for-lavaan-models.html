@@ -3,8 +3,9 @@ title: SEM Plots for Lavaan Models
 author: Ethan Young
 description: "Drawing path diagrams from lavaan objects in ggplot2"
 date: '2018-12-23'
-updated: "August 14, 2020"
+updated: "December 16, 2020"
 tocbot: true
+anchor_sections: false
 slug: sem-diagrams-for-lavaan-models
 categories: []
 tags:
@@ -14,6 +15,7 @@ tags:
   - lavaan
 ---
 
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
 
 
 <div id="introduciton" class="section level3">
@@ -45,7 +47,7 @@ model &lt;- &#39;
 fit &lt;- sem(model, data=PoliticalDemocracy)</code></pre>
 <p>Here is the output:</p>
 <pre class="r"><code>summary(fit, standardized=TRUE)</code></pre>
-<pre><code>## lavaan 0.6-6 ended normally after 68 iterations
+<pre><code>## lavaan 0.6-7 ended normally after 68 iterations
 ## 
 ##   Estimator                                         ML
 ##   Optimization method                           NLMINB

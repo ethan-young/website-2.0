@@ -18,15 +18,15 @@ tags:
 
 In recent years, there is a growing interest in multiverse analysis, a technique for compiling all possible datasets that could result from different data processing decisions. Once compiled, researchers can run their analysis of interest across all datasets in the multiverse to see how sensitive their models are to the decisions that produced the underlying data. In this post, I attempt my own multiverse analysis using simulated data.
 
-Note that there are already many good places to learn more about the multiverse analysis, including papers, blog posts, and code examples. My intention is to understand the mechanics the technique without the aid of a pre-written package. My goal is to deepen my own understanding and to flesh out the different ways to use the technique and compile/visualize the results.
+Note that there are already many good places to learn more about the multiverse analysis, including papers, blog posts, and code examples. My intention is to understand the mechanics of the technique without the aid of a pre-written package. My goal is to deepen my own understanding and to flesh out the different ways to use the technique and compile/visualize the results.
 
 #### Arbitrary vs. Non-Arbitrary Decisions
 
-Processing raw data involves many steps, such as cleaning, preparing, and creating analysis variables (among many others). Such decisions eventually produce an analysis-ready dataset, but making (even slightly) different decisions will produce a different dataset. And so emerges the multiverse: all possible datasets that could generated from different data processing decisions (see also the [garden of forking paths](https://www.americanscientist.org/article/the-statistical-crisis-in-science)).
+Processing raw data involves many steps, such as cleaning, preparing, and creating analysis variables (among many others). Such decisions eventually produce an analysis-ready dataset, but making (even slightly) different decisions will produce a different dataset. And so emerges the multiverse: all possible datasets that could be generated from different data processing decisions (see also the [garden of forking paths](https://www.americanscientist.org/article/the-statistical-crisis-in-science)).
 
 An important distinction in multiverse analysis is between arbitrary and non-arbitrary decisions. Arbitrary decisions are those that:
 
-1.  are not expected to influence results and,
+1.  are not expected to influence results (or their effect is unknown) and,
 2.  equally defensible/have reasonable justifications
 
 For example, whether to remove outliers at +/- 3 or 2.5 standard deviations could be arbitrary. Neither cutoff is theoretically informed and both are equally defensible.
@@ -48,11 +48,9 @@ library(tidymodels)
 library(ggeffects)
 library(interactions)
 library(showtext)
-
 # Custom font for ggplot
 font_add_google("Lato")
 showtext_auto()
-
 # Set the ggplot2 theme
 theme_set(
   theme_light() +
@@ -84,7 +82,6 @@ These variables will be used to construct a multiverse of datasets.
 ```{r data}
 # Set the seed for reproducibility
 set.seed(12345)
-
 # Create some data
 sim_data <- 
   tibble(
@@ -106,7 +103,7 @@ sim_data <-
   )
 ```
 
-And her are the first 10 rows of the simulated data:
+And here are the first 10 rows of the simulated data:
 
 ```{r echo = F, message=F, warning=F}
 sim_data %>%
@@ -230,7 +227,6 @@ mulitverse_sample_size <-
   # Add the decisions to the model table
   bind_cols(n = x$n, decisions)
 })
-
 mulitverse_sample_size %>% 
   ggplot(aes(x = n)) +
   geom_histogram(color = "black", bins = 15) +
@@ -371,7 +367,6 @@ multiverse_estimates <-
     # Add the decisions to the model table
     bind_cols(x$mod_tidy, n = x$n, decisions)
   })
-
 # Only look at our main effects and interaction terms
 multiverse_plot_data <- 
   multiverse_estimates %>% 
@@ -421,7 +416,6 @@ multiverse_effect_curve <-
     axis.title.x = element_blank(),
     axis.ticks.x = element_blank()
   )
-
 multiverse_effect_curve
 ```
 
@@ -442,7 +436,6 @@ multiverse_spec_grid <-
   scale_color_manual(values = c("gray","#f0506e")) +
   facet_grid(variable_group~term, scales = "free_y") +
   theme(strip.background.x = element_blank(), strip.text.x = element_blank(), strip.placement = "outside")
-
 multiverse_spec_grid
 ```
 

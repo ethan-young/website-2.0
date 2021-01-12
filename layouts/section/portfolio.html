@@ -1,0 +1,49 @@
+{{ define "title"}} {{ .Title}} {{end}}
+{{ define "header"}} {{ partial "header" .}} {{end}}
+
+{{ define "main" }}
+
+<style>
+  #article-top h4:after {
+    position: absolute;
+    content: '';
+    width: 40px;
+    height: 3px;
+    top: 0;
+    left: 50%;
+    margin-left: -20px;
+    background: #f0506e;
+  }
+</style>
+
+<div id = "article-top" class = 'uk-margin-bottom uk-position-relative'>
+  <h1 class = 'uk-heading-medium uk-padding uk-text-center uk-position-relative'>{{ .Params.title }}</h1>
+  <h4 class = "uk-text-center uk-text-italic uk-position-relative uk-padding uk-padding-remove-bottom uk-margin-remove-top">{{ .Params.description }}</h4>
+  {{.Content}}
+</div>
+
+<div class = 'uk-container uk-container-small uk-padding'>
+  {{ range .Pages.ByWeight }}
+    <div  class="uk-card uk-card-default uk-grid-collapse uk-child-width-1-2@s uk-margin" uk-grid>
+      {{ if eq .Params.position "left" }}
+      <div class="uk-card-media-left uk-cover-container">
+      {{ else if eq .Params.position "right" }}
+      <div class="uk-flex-last@s uk-card-media-right uk-cover-container">
+      {{end}}
+        <img src='{{ .Params.media }}' alt="" uk-cover>
+        <canvas width="400" height="200"></canvas> 
+      </div>
+      <div>
+        <div class = "uk-card-body">
+          <h3 class = 'uk-card-title uk-link-heading'><a href="{{ .Permalink }}">{{ .Title }}</a></h3>
+          <p>{{ .Description }}</p>
+        </div>
+      </div>
+    </div>
+  {{end}}
+</div>
+
+{{ end }}
+{{ define "footer" }}
+  {{ partial "footer" . }}
+{{ end }}

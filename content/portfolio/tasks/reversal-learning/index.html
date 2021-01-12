@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Choose an Image</title>
+
+        <!--Load JQuery-->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+        <!--Load html2canvas-->
+        <script src="other-tools/html2canvas.js"></script>
+
+        <!--Load my helper function-->
+        <script src="other-tools/prl-stim-maker.js"></script>
+
+        <!--Load jsPsych-->
+        <script src="jspsych-6.0.5/jspsych.js"></script>
+
+        <!--Load standard jsPysch plugins for experiment-->
+        <script src="jspsych-6.0.5/plugins/jspsych-instructions.js"></script>
+        <script src="jspsych-6.0.5/plugins/jspsych-html-slider-response.js"></script>
+        <script src="jspsych-6.0.5/plugins/jspsych-html-button-response.js"></script>
+        <script src="jspsych-6.0.5/plugins/jspsych-image-keyboard-response.js"></script>
+        <script src="jspsych-6.0.5/plugins/jspsych-survey-text.js"></script>
+        <script src="jspsych-6.0.5/plugins/jspsych-survey-multi-choice.js"></script>
+        <script src="jspsych-6.0.5/plugins/jspsych-survey-likert.js"></script>
+
+        <!--Load custom plugins for experiment-->
+        <script src="custom-plugins/jspsych-categorize-html.js"></script>
+        <script src="custom-plugins/jspsych-survey-matrix.js"></script>
+        <script src="custom-plugins/jspsych-fullscreen-esy.js"></script>
+
+        <!--jsPsych stylesheet-->
+        <link href="css/jspsych.css" rel="stylesheet" type="text/css"></link>
+
+        <!--Experiment scripts-->
+        <script src="exp-blocks/01-setup.js"></script>
+        <script src="exp-blocks/02-instructions.js"></script>
+        <script src="exp-blocks/03-prl-practice.js"></script>
+        <script src="exp-blocks/04-prl-block.js"></script>
+        <script src="exp-blocks/run.js"></script>
+
+    </head>
+    <body></body>
+</html>

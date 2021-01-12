@@ -8,7 +8,7 @@ tocbot: true
 library(tidyverse)
 library(glue)
 library(htmltools)
-library(googlesheets4)
+library(readxl)
 
 # Publications
 journals <- c("Journal of Personality and Social Psychology",
@@ -21,16 +21,17 @@ journals <- c("Journal of Personality and Social Psychology",
               "Development and Psychopathology",
               "Evolution and Human Behavior")
 
-# Get pubs gsheet
-gs4_auth("young.ethan.scott@gmail.com")
-cv_data_url <- "https://docs.google.com/spreadsheets/d/1EXR666AmWCTuTrifL-BtlwS4BgPs-n3NE0OQkhnAoHc/edit#gid=0"
-pubs <- range_read(cv_data_url, sheet = 1, col_types = c("c")) %>% 
-  mutate(citation = str_replace(citation,"Young, E. S.","<span class = 'uk-text-bold uk-text-emphasis'>Young, E. S.</span>"),
-         citation = str_replace(citation, paste0("(",journals,")",collapse="|"), "<i>\\1\\2\\3\\4\\5\\6\\7\\8\\9</i>"))
-positions <- range_read(cv_data_url, sheet = 2, col_types = c("c")) %>% arrange(desc(end))
-education <- range_read(cv_data_url, sheet = 3, col_types = c("c")) %>% arrange(desc(end))
-awards <- range_read(cv_data_url, sheet = 4, col_types = c("c")) %>% arrange(desc(end))
-teaching <- range_read(cv_data_url, sheet = 5, col_types = c("c")) %>% arrange(desc(year))
+# Read cv data
+cv_path <- "../../data/cv-data.xlsx"
+pubs <- readxl::read_excel(cv_path, sheet = 1) %>% 
+  mutate(
+    citation = str_replace(citation,"Young, E. S.","<span class = 'uk-text-bold uk-text-emphasis'>Young, E. S.</span>"),
+    citation = str_replace(citation, paste0("(",journals,")",collapse="|"), "<i>\\1\\2\\3\\4\\5\\6\\7\\8\\9</i>")
+  )
+positions <- read_excel(cv_path, sheet = 2, col_types = c("text")) %>% arrange(desc(end))
+education <- read_excel(cv_path, sheet = 3, col_types = c("text")) %>% arrange(desc(end))
+awards    <- read_excel(cv_path, sheet = 4, col_types = c("text")) %>% arrange(desc(end))
+teaching  <- read_excel(cv_path, sheet = 5, col_types = c("text")) %>% arrange(desc(year))
 
 # Journal articles
 articles <- pubs %>% 

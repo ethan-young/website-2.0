@@ -1,0 +1,61 @@
+---
+title: Behavioral Tasks
+description: A set of tasks I've programmed using jsPsych for scientific studies of cognition
+author: ''
+date: '2020-12-08'
+updated: "`r format(Sys.time(), '%B %d, %Y')`"
+tocbot: true
+slug: Tasks
+weight: 30
+position: "left"
+media: thumbs/task.jpg
+---
+
+```{r echo=F,warning=F,message=F}
+library(tidyverse)
+library(readxl)
+library(glue)
+library(htmltools)
+
+task_data <- read_excel("../../data/task-data.xlsx")
+
+task_data %>% 
+  pull(task) %>% 
+  walk(function(x){
+    zip(zipfile = paste0("tasks/", x,".zip"), files = paste0("tasks/", x, "/"))
+  })
+
+HTML(
+  "<ul class = 'uk-subnav uk-subnav-pill uk-flex-center' uk-switcher>",
+  glue_data(
+    task_data,
+    "<li><a href = '#'>{task_name}</a></li>",
+  ) %>% paste(collapse = ""),
+  "</ul>"
+)
+```
+
+```{r echo=F,warning=F,message=F}
+HTML(
+  "<ul class = 'uk-switcher uk-padding uk-padding-remove-vertical uk-width-1-1@m'>",
+  glue_data(
+    task_data,
+    "<li>",
+    "<div class='uk-container'>",
+    "<iframe id='{task}' class = 'uk-width-expand ' src='../tasks/{task}/index.html' height = '650' width='800' style='border: 1px solid #e5e5e5;'></iframe>",
+    "<div class = 'uk-flex uk-flex-center uk-padding-small' uk-grid>",
+    "<div><button class = 'uk-button uk-button-default' onclick='reload(\"{task}\")'>Reload task</button></div>",
+    "<div><a class = 'uk-button uk-button-secondary' href='{task}.zip' download='{task}'>Download Task</a></div>",
+    "</div>",
+    "</div>",
+    "</li>"
+  ) %>% paste(collapse = ""),
+  "</ul>"
+)
+```
+
+<script>
+function reload(my_string) { 
+document.getElementById(my_string).src += ''; 
+} 
+</script>

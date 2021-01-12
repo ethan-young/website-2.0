@@ -1,0 +1,53 @@
+<html>
+    <head>
+        <title>Mind in the Eyes</title>
+        <script src="jspsych-6.1.0/jspsych.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-instructions.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-html-keyboard-response.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-html-button-response.js"></script>
+        <link href="jspsych-6.1.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+    </head>
+    <body></body>
+    <script src="blocks/0-instructions.js"></script>
+    <script src="blocks/0-image-files.js"></script>
+    <script src="blocks/0-response-definitions.js"></script>
+    <script src="blocks/1-mind-in-the-eyes-block.js"></script>
+    <script src="blocks/run-experiment.js"></script>
+    <style>
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      border-bottom: 1px dotted black;
+      text-align: left;
+    }
+    
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 800px;
+      text-align: left;
+      border-radius: 6px;
+      border-width: 1px;
+      border-color:  #ccc;
+      border-style: none;
+      padding: 5px 5px;
+      
+      /* Position the tooltip */
+      position: absolute;
+      z-index: 1;
+      top: 100%;
+      left: 0%;
+      margin-left: -100%;
+    }
+    
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+    }
+    
+    table, th, td {
+      border-collapse: collapse;
+      padding: 5px;
+      vertical-align: top;
+      max-width: 400px;
+    }
+</style>
+</html>

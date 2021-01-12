@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Alternative Uses</title>
+        <!-- Load jspsych -->
+        <script src="jspsych-6.1.0/jspsych.js"></script>
+        
+        <!-- Load jspsych plugins -->
+        <script src="jspsych-6.1.0/plugins/jspsych-instructions.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-html-button-response.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-html-keyboard-response.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-survey-html-form.js"></script>
+        <script src="jspsych-6.1.0/plugins/jspsych-survey-text.js"></script>
+        
+        <!-- Ethan's custom plugins -->
+        <script src="my-plugins/ethan-survey-text-duration.js"></script>
+        
+        <!-- Stylesheet -->
+        <link href="jspsych-6.1.0/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+        
+        <!-- Experiment blocks -->
+        <script src="blocks/1-start.js"></script>
+        <script src="blocks/2-aut-fork.js"></script>
+        <script src="blocks/2-aut-paperclip.js"></script>
+        <script src="blocks/2-aut-towel.js"></script>
+
+    </head>
+    <body></body>
+    <script>
+        timeline.push({
+          type: 'html-button-response',
+          stimulus: "Great work!<br><br>" + 
+          "You are now finished with the game.<br><br>" +
+          "Click 'finish' to exit.<br><br>",
+          choices: ['Finish'],
+          data: {variable: "end"},
+        });
+        
+        jsPsych.init({
+          timeline: timeline,
+          on_finish: function() {
+            //var subjID = jsPsych.data.get().select("ID").values[0];
+            var start_time = jsPsych.startTime();
+            jsPsych.data.addProperties({start_date_time: start_time});
+            jsPsych.data.get().localSave('csv','your-aut-data.csv');
+          }
+        });
+    </script>
+</html>

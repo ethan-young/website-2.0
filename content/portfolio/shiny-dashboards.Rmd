@@ -1,0 +1,58 @@
+---
+title: Shiny Applications
+description: A few of the interactive web applications I've built with Shiny
+author: ''
+date: '2020-12-08'
+updated: "`r format(Sys.time(), '%B %d, %Y')`"
+tocbot: false
+anchor_sections: false
+slug: Shiny
+media: thumbs/dash.png
+weight: 20
+position: "right"
+---
+
+```{r echo=F,warning=F,message=F}
+library(tidyverse)
+library(readxl)
+library(glue)
+library(htmltools)
+
+shiny_data <- read_excel("../../data/shiny-data.xlsx")
+
+HTML(
+  "<ul class = 'uk-subnav uk-subnav-pill uk-flex-center' uk-switcher>",
+  glue_data(
+    shiny_data,
+    "<li><a href = '#'>{app}</a></li>",
+  ) %>% paste(collapse = ""),
+  "</ul>"
+)
+```
+
+```{r echo=F,warning=F,message=F}
+HTML(
+  "<ul class = 'uk-switcher uk-padding uk-padding-remove-vertical uk-width-1-1@m'>",
+  glue_data(
+    shiny_data,
+    "<li>",
+    "<div class='uk-container'>",
+    "<h4>Description</h4>",
+    "<p>{description}</p>",
+    "<iframe id='{app}' class = 'uk-width-expand ' src='{link}' height = '650' width='900' style='border: 1px solid #e5e5e5;'></iframe>",
+    "<div class = 'uk-flex uk-flex-center uk-padding-small' uk-grid>",
+    "<div><button class = 'uk-button uk-button-default' onclick='reload(\"{app}\")'>Reload Dashboard</button></div>",
+    "<div><a class = 'uk-button uk-button-secondary' href='{link}' target = '_blank'>Open in New Window</a></div>",
+    "</div>",
+    "</div>",
+    "</li>"
+  ) %>% paste(collapse = ""),
+  "</ul>"
+)
+```
+
+<script>
+function reload(my_string) { 
+document.getElementById(my_string).src += ''; 
+} 
+</script>

@@ -17,25 +17,61 @@ title = "ESY"
   degree = "Ph.D."
 
 [[menu.main]]
-    name = "Publications"
+    name = "Work"
     weight = 10
+[[menu.main]]
+    name = "Sandbox"
+    weight = 20
+
+[[menu.main]]
+    name = "Publications"
     url = "/publications/"
+    parent = "Work"
 [[menu.main]]
     name = "Posts"
-    weight = 20
     url = "/posts/"
+    parent = "Sandbox"
 [[menu.main]]
-    name = "Resources"
-    weight = 30
-    url = "/resources/"
+    name = "Portfolio"
+    url = "/portfolio/"
+    parent = "Work"
 [[menu.main]]
     name = "CV"
-    weight = 40
     url = "/cv/"
+    parent = "Work"
+[[menu.main]]
+    name = "Learning"
+    url = "/resources/"
+    parent = "Sandbox"
 [[menu.main]]
     name = "About"
-    weight = 50
     url = "/about/"
+    weight = 30
+
+#[[menu.main]]
+#    name = "Publications"
+#    weight = 10
+#    url = "/publications/"
+#[[menu.main]]
+#    name = "Posts"
+#    weight = 20
+#    url = "/posts/"
+#[[menu.main]]
+#    name = "Portfolio"
+#    weight = 30
+#    url = "/portfolio/"
+#[[menu.main]]
+#    name = "CV"
+#    weight = 40
+#    url = "/cv/"
+#[[menu.main]]
+#    name = "Resources"
+#    weight = 50
+#    url = "/resources/"
+#[[menu.main]]
+#    name = "About"
+#    weight = 60
+#    url = "/about/"
 
 #[[menu.main]]
 #    name = "Archive"
@@ -48,4 +84,4 @@ title = "ESY"
 [outputs]
   home = [ "HTML", "RSS", "JSON"]
 
-ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$", "^cv-pdf\\.Rmd$"]
+ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$", "\\.knit\\.md$", "\\.utf8\\.md$", "^cv-pdf\\.Rmd$"]

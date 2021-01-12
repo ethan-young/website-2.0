@@ -1,0 +1,75 @@
+// Cambridge voice task block 1
+var cam_video_replay = "<p>How is this person feeling?</p>";
+
+timeline.push({
+  timeline: [
+      {
+        type: 'html-keyboard-response',
+        stimulus: '+',
+        choices: jsPsych.NO_KEYS,
+        trial_duration: 1000
+      },
+      {
+        type: 'video-button-response',
+        height: 300,
+        controls: false,
+        sources: jsPsych.timelineVariable('sources'),
+        prompt: jsPsych.timelineVariable('prompt'),
+        choices: jsPsych.timelineVariable('choices'),
+        data: jsPsych.timelineVariable('data')
+      }
+  ],
+  randomize_order: true,
+  timeline_variables: [
+    {sources: [video_files[0]], prompt: cam_video_replay + prompts[0], choices: ["convinced","sociable","resentful","luring"], data: {answer: "resentful", answer_js: 2}},
+    {sources: [video_files[1]], prompt: cam_video_replay + prompts[1], choices: ["jaded","blank","resentful","oppressive"], data: {answer: "resentful", answer_js: 2}},
+    {sources: [video_files[2]], prompt: cam_video_replay + prompts[2], choices: ["bewildered","resentful","modest","pitying"], data: {answer: "resentful", answer_js: 1}},
+    {sources: [video_files[3]], prompt: cam_video_replay + prompts[3], choices: ["assertive","calculating","stern","insincere"], data: {answer: "stern", answer_js: 2}},
+    {sources: [video_files[4]], prompt: cam_video_replay + prompts[4], choices: ["stern","sociable","distraught","condemned"], data: {answer: "stern", answer_js: 0}},
+    {sources: [video_files[5]], prompt: cam_video_replay + prompts[5], choices: ["tortured","resigned","stern","infuriated"], data: {answer: "stern", answer_js: 2}},
+    {sources: [video_files[6]], prompt: cam_video_replay + prompts[6], choices: ["blank","resigned","deserted","grave"], data: {answer: "grave", answer_js: 3}},
+    {sources: [video_files[7]], prompt: cam_video_replay + prompts[7], choices: ["grave","complacent","judgmental","seductive"], data: {answer: "grave", answer_js: 0}},
+    {sources: [video_files[8]], prompt: cam_video_replay + prompts[8], choices: ["condescending","blank","subdued","invigorated"], data: {answer: "subdued", answer_js: 2}},
+    {sources: [video_files[9]], prompt: cam_video_replay + prompts[9], choices: ["empty","jubilant","subdued","grave"], data: {answer: "subdued", answer_js: 2}},
+    {sources: [video_files[10]], prompt: cam_video_replay + prompts[10], choices: ["rejecting","exonerated","vacant","deserted"], data: {answer: "exonerated", answer_js: 1}},
+    {sources: [video_files[11]], prompt: cam_video_replay + prompts[11], choices: ["exonerated","terrorised","empty","discouraging"], data: {answer: "exonerated", answer_js: 0}},
+    {sources: [video_files[12]], prompt: cam_video_replay + prompts[12], choices: ["sentimental","assertive","exonerated","fantasising"], data: {answer: "exonerated", answer_js: 2}},
+    {sources: [video_files[13]], prompt: cam_video_replay + prompts[13], choices: ["oppressive","vibrant","unenthusiastic","uneasy"], data: {answer: "uneasy", answer_js: 3}},
+    {sources: [video_files[14]], prompt: cam_video_replay + prompts[14], choices: ["intimidated","unconcerned","uneasy","bewildered"], data: {answer: "uneasy", answer_js: 2}},
+    {sources: [video_files[15]], prompt: cam_video_replay + prompts[15], choices: ["Vigilant","grave","empathic","resigned"], data: {answer: "empathic", answer_js: 2}},
+    {sources: [video_files[16]], prompt: cam_video_replay + prompts[16], choices: ["refreshed","empathic","resigned","concealing"], data: {answer: "empathic", answer_js: 1}},
+    {sources: [video_files[17]], prompt: cam_video_replay + prompts[17], choices: ["overcome","inadequate","empathic","hysterical"], data: {answer: "empathic", answer_js: 2}},
+    {sources: [video_files[18]], prompt: cam_video_replay + prompts[18], choices: ["unconcerned","tortured","tense","vibrant"], data: {answer: "vibrant", answer_js: 3}},
+    {sources: [video_files[19]], prompt: cam_video_replay + prompts[19], choices: ["terrorised","condemned","empathic","vibrant"], data: {answer: "vibrant", answer_js: 3}},
+    {sources: [video_files[20]], prompt: cam_video_replay + prompts[20], choices: ["hysterical","lured","provoked","passive"], data: {answer: "lured", answer_js: 1}},
+    {sources: [video_files[21]], prompt: cam_video_replay + prompts[21], choices: ["lured","pitying","grave","vague"], data: {answer: "lured", answer_js: 0}},
+    {sources: [video_files[22]], prompt: cam_video_replay + prompts[22], choices: ["restless","invigorated","lured","bitter"], data: {answer: "lured", answer_js: 2}},
+    {sources: [video_files[23]], prompt: cam_video_replay + prompts[23], choices: ["subservient","admiring","miffed","provoked"], data: {answer: "subservient", answer_js: 0}},
+    {sources: [video_files[24]], prompt: cam_video_replay + prompts[24], choices: ["tense","subservient","empty","intimate"], data: {answer: "subservient", answer_js: 1}},
+    {sources: [video_files[25]], prompt: cam_video_replay + prompts[25], choices: ["overcome","inattentive","appalled","complacent"], data: {answer: "appalled", answer_js: 2}},
+    {sources: [video_files[26]], prompt: cam_video_replay + prompts[26], choices: ["appalled","modest","pitiless","cocky"], data: {answer: "appalled", answer_js: 0}},
+    {sources: [video_files[27]], prompt: cam_video_replay + prompts[27], choices: ["cynical","pining","unreceptive","appalled"], data: {answer: "appalled", answer_js: 3}},
+    {sources: [video_files[28]], prompt: cam_video_replay + prompts[28], choices: ["confronted","congratulatory","grave","agonising"], data: {answer: "confronted", answer_js: 0}},
+    {sources: [video_files[29]], prompt: cam_video_replay + prompts[29], choices: ["affinity","pitying","confronted","complacent"], data: {answer: "confronted", answer_js: 2}},
+    {sources: [video_files[30]], prompt: cam_video_replay + prompts[30], choices: ["flattering","confronted","reassured","remote"], data: {answer: "confronted", answer_js: 1}},
+    {sources: [video_files[31]], prompt: cam_video_replay + prompts[31], choices: ["intimate","carefree","tortured","inadequate"], data: {answer: "intimate", answer_js: 0}},
+    {sources: [video_files[32]], prompt: cam_video_replay + prompts[32], choices: ["determined","ruffled","intimate","daunted"], data: {answer: "intimate", answer_js: 2}},
+    {sources: [video_files[33]], prompt: cam_video_replay + prompts[33], choices: ["demoralised","insincere","miffed","spellbound"], data: {answer: "insincere", answer_js: 1}},
+    {sources: [video_files[34]], prompt: cam_video_replay + prompts[34], choices: ["distraught","insincere","unfocused","contradictory"], data: {answer: "insincere", answer_js: 1}},
+    {sources: [video_files[35]], prompt: cam_video_replay + prompts[35], choices: ["pestered","pitiless","discomforted","appealing"], data: {answer: "appealing", answer_js: 3}},
+    {sources: [video_files[36]], prompt: cam_video_replay + prompts[36], choices: ["humble","triumphant","assertive","appealing"], data: {answer: "appealing", answer_js: 3}},
+    {sources: [video_files[37]], prompt: cam_video_replay + prompts[37], choices: ["empathic","mortified","inattentive","assertive"], data: {answer: "mortified", answer_js: 1}},
+    {sources: [video_files[38]], prompt: cam_video_replay + prompts[38], choices: ["cautious","jaded","mortified","grieving"], data: {answer: "mortified", answer_js: 2}},
+    {sources: [video_files[39]], prompt: cam_video_replay + prompts[39], choices: ["brazen","oppressive","guarded","infuriated"], data: {answer: "guarded", answer_js: 2}},
+    {sources: [video_files[40]], prompt: cam_video_replay + prompts[40], choices: ["humble","distaste","guarded","agonising"], data: {answer: "guarded", answer_js: 2}},
+    {sources: [video_files[41]], prompt: cam_video_replay + prompts[41], choices: ["offended","distaste","vigilant","complacent"], data: {answer: "distaste", answer_js: 1}},
+    {sources: [video_files[42]], prompt: cam_video_replay + prompts[42], choices: ["admiring","needled","distaste","inattentive"], data: {answer: "distaste", answer_js: 2}},
+    {sources: [video_files[43]], prompt: cam_video_replay + prompts[43], choices: ["flattering","distaste","blank","mystified"], data: {answer: "distaste", answer_js: 1}},
+    {sources: [video_files[44]], prompt: cam_video_replay + prompts[44], choices: ["exonerated","devastated","nostalgic","calculating"], data: {answer: "nostalgic", answer_js: 2}},
+    {sources: [video_files[45]], prompt: cam_video_replay + prompts[45], choices: ["cherishing","nostalgic","hysterical","condemning"], data: {answer: "nostalgic", answer_js: 1}},
+    {sources: [video_files[46]], prompt: cam_video_replay + prompts[46], choices: ["neglected","invigorated","downtrodden","nostalgic"], data: {answer: "nostalgic", answer_js: 3}},
+    {sources: [video_files[47]], prompt: cam_video_replay + prompts[47], choices: ["luring","empty","reassured","nostalgic"], data: {answer: "reassured", answer_js: 2}},
+    {sources: [video_files[48]], prompt: cam_video_replay + prompts[48], choices: ["entrancing","alert","reassured","blank"], data: {answer: "reassured", answer_js: 2}},
+    {sources: [video_files[49]], prompt: cam_video_replay + prompts[49], choices: ["comprehending","reassured","vulnerable","invigorated"], data: {answer: "reassured", answer_js: 1}}
+  ]
+});

@@ -43,6 +43,7 @@
        margin-left: 8px;
        position: relative;
        top: -1px;
+       text-decoration: none;
     }
     
     h3 > a {
@@ -75,9 +76,9 @@
   $(document).ready(function(){
     var item_index = 0;
     $("#ui-toc").append("<li class='uk-nav-header'>Contents</li>");
-    $("article h3").each(function(){
+    $("article > div > h3").each(function(){
       var content  = $(this).html()
-      var trimmed_name = content.replace(/\./g,"").replace(/&/g,"").replace(/amp;./g,"").replace(/\d/,"").replace(/ /g,"-");
+      var trimmed_name = content.replace(/\./g,"").replace(/&/g,"").replace(/amp;./g,"").replace(/\d/,"").replace(/ /g,"-").toLowerCase();
       $(this).attr("id", trimmed_name)
       $(this).addClass('uk-text-bold')
       $(this).html("<a>" + content + "</a>")

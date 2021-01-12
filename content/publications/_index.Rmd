@@ -7,12 +7,11 @@ description: Journal articles, book chapters, and conference presentations
 library(tidyverse)
 library(glue)
 library(htmltools)
-library(googlesheets4) 
+library(readxl)
 ```
 
 ```{r echo=F, message=F, warning=F, results='asis'}
-gs4_auth("young.ethan.scott@gmail.com")
-pubs <- range_read("https://docs.google.com/spreadsheets/d/1EXR666AmWCTuTrifL-BtlwS4BgPs-n3NE0OQkhnAoHc/edit#gid=0", sheet = 1, col_types = c("c"))
+pubs <- read_excel("../../data/cv-data.xlsx", sheet = 1, col_types = c("text"))
 
 articles <- pubs %>% 
   mutate(filename = paste(str_remove(citation_intext,' .*'),year,abbr,sep='-') %>% str_remove('&') %>% str_to_lower()) %>%

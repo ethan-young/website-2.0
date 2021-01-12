@@ -1,0 +1,111 @@
+---
+title: Visualizations
+description: A collection of my professionl and academic visualizations
+author: ''
+date: '2020-12-08'
+updated: "`r format(Sys.time(), '%B %d, %Y')`"
+tocbot: false
+slug: Plotting
+weight: 10
+position: "left"
+media: thumbs/viz.jpg
+---
+
+```{r echo=F,message=F,warning=F}
+library(tidyverse)
+library(glue)
+library(htmltools)
+library(readxl)
+
+vis_data <- 
+  read_excel("../../data/visualizaitons-data.xlsx") %>% 
+  mutate(
+    in_text      = str_remove(in_text, ",") %>% str_replace("(\\d\\d\\d\\d)", "\\(\\1\\)"),
+    year         = str_extract(in_text, "\\d\\d\\d\\d") %>% as.numeric(),
+    width        = width,
+    height       = height,
+    asp_ratio    = width/height,
+    adj_width    = ifelse(width > 600, 600, width),
+    new_height   = adj_width/asp_ratio,
+    asp_ratio1   = adj_width/new_height,
+    adj_height   = ifelse(new_height > 450, 450, new_height),
+    new_width    = adj_height*asp_ratio,
+    asp_ratio2   = new_width/adj_height
+  )
+```
+
+<div class = 'uk-container uk-container-small'>
+<ul class = 'uk-flex-center' uk-tab>
+<li class='uk-active'><a href = '#'>Data Visualizations</a></li>
+<li><a href = '#'>Conceptual Figures</a></li>
+</ul>
+<ul class = 'uk-switcher uk-padding uk-padding-remove-vertical uk-width-1-1@m'>
+
+<li>
+
+```{r echo=F,message=F,warning=F}
+tags$section(
+  HTML(
+    "<div class='uk-align-center' uk-grid>",
+    glue_data(
+      vis_data %>% filter(plot_type == "data") %>% arrange(desc(featured), desc(year), title, figure),
+        "<div class = 'uk-card uk-card-hover uk-border-rounded uk-padding'>",
+            "<h5 class = 'uk-text-bold uk-margin-remove-bottom'><a class='uk-link-heading' href= '{link}'>{in_text}</a>, Figure {figure}</h5>",
+            "<p class='uk-text-muted uk-margin-remove-top'>{title}</p>",
+          "<div class='uk-card-media-top uk-padding-small uk-flex uk-flex-center' >",
+            "<img src='../{file}' width='{new_width}' height='{adj_height}' alt=''>",
+          "</div>",
+          "<div class='uk-card-badge uk-label uk-text-lighter' style='text-transform:none;'>{tool}</div>",
+          "<div class='uk-card-body'>",
+            "<div class = 'uk-flex uk-flex-center' uk-lightbox>",
+              "<a class = 'uk-button uk-button-text' href = '../{file}'>View Full Size</a>",
+            "</div>",
+            "<ul uk-accordion>",
+              "<li>",
+                "<a class='uk-accordion-title uk-text-small' href='#'>Caption</a><div class='uk-accordion-content'><p class='uk-text-small uk-text-lighter'>{caption}</p></div>",
+              "</li>",
+            "</ul>",
+          "</div>",
+        "</div>",
+    ) %>% paste(collapse = ""),
+    "</div"
+  )
+)
+```
+
+</li>
+<li>
+
+```{r echo=F,message=F,warning=F}
+tags$section(
+  HTML(
+    "<div class='uk-align-center' uk-grid>",
+    glue_data(
+      vis_data %>% filter(plot_type == "conceptual") %>% arrange(desc(featured), desc(year), title, figure),
+        "<div class = 'uk-card uk-card-hover uk-border-rounded uk-padding'>",
+            "<h5 class = 'uk-text-bold uk-margin-remove-bottom'><a class='uk-link-heading' href= '{link}'>{in_text}</a>, Figure {figure}</h5>",
+            "<p class='uk-text-muted uk-margin-remove-top'>{title}</p>",
+          "<div class='uk-card-media-top uk-padding-small uk-flex uk-flex-center' >",
+            "<img src='../{file}' width='{new_width}' height='{adj_height}' alt=''>",
+          "</div>",
+          "<div class='uk-card-badge uk-label uk-text-lighter' style='text-transform:none;'>{tool}</div>",
+          "<div class='uk-card-body'>",
+            "<div class = 'uk-flex uk-flex-center' uk-lightbox>",
+              "<a class = 'uk-button uk-button-text' href = '../{file}'>View Full Size</a>",
+            "</div>",
+            "<ul uk-accordion>",
+              "<li>",
+                "<a class='uk-accordion-title uk-text-small' href='#'>Caption</a><div class='uk-accordion-content'><p class='uk-text-small uk-text-lighter'>{caption}</p></div>",
+              "</li>",
+            "</ul>",
+          "</div>",
+        "</div>",
+    ) %>% paste(collapse = ""),
+    "</div"
+  )
+)
+```
+
+</li>
+</ul>
+</div>

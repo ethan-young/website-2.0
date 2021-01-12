@@ -11,6 +11,7 @@ tags:
   - dplyr
   - R
 tocbot: true
+anchor_sections: false
 ---
 
 ### Introduction & Setup
