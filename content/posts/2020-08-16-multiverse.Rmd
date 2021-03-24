@@ -31,7 +31,7 @@ An important distinction in multiverse analysis is between arbitrary and non-arb
 
 For example, whether to remove outliers at +/- 3 or 2.5 standard deviations could be arbitrary. Neither cutoff is theoretically informed and both are equally defensible.
 
-In contrast, non-arbitrary choices are expected to affect results, either for theoretical or empirical reasons. For example, theory might suggest controlling for a confound is crucial for interpreting results. Empirically, controlling for a confound may aid interpretation because such a confound is known to correlate with the outcome of interest and should be accounting for in each our analysis.
+In contrast, non-arbitrary choices are expected to affect results, either for theoretical or empirical reasons. For example, theory might suggest controlling for a confound is crucial for interpreting results. Empirically, controlling for a confound may aid interpretation because such a confound is known to correlate with the outcome of interest and should be accounted for in our analysis.
 
 Multiverse analysis should be ran over all possible **arbitrary** decisions. This is important because the multiverse can quickly become unnecessarily large and difficult to interpret. Ideally, the multiverse will comprise all datasets that, by themselves, would make sense to analyze and interpret individually.
 
@@ -106,9 +106,9 @@ sim_data <-
 And here are the first 10 rows of the simulated data:
 
 ```{r echo = F, message=F, warning=F}
-sim_data %>%
+sim_data %>% 
   select(id, iv_unp, contains("dv_"), starts_with("ex_")) %>% 
-  head() %>% 
+  head() %>%
   knitr::kable(digits = 2, format = 'html', table.attr = "class=\"uk-table uk-table-small uk-table-divider\"")
 ```
 
@@ -256,7 +256,7 @@ mulitverse_sample_size %>%
 
 I've generated our multiverse of datasets, now I need to analyze it. My strategy is to loop over my `multiverse_data` object. First, I extract the decisions that produced the data to know what we should do with `ex_csd` (i.e., create residualized scores, include it as a covariate, or do nothing).
 
-Next, I restructure the data into long format so I can run a mixed model with random intercepts to look at the main effect of `iv_unp` (between subjects), main effect of `task_type` (standard or ecological version, within subjects), and their interaction.
+Next, I restructure the data into long format so I can run a mixed model with random intercepts to look at the main effect of `iv_unp` (between-subjects), main effect of `task_type` (standard or ecological version, within-subjects), and their interaction.
 
 After running the mixed model, I also do a simple slopes test to evaluate (in the context of an interaction) the simple effects of high versus low unpredictability and standard versus ecological versions of the test.
 
@@ -577,7 +577,7 @@ multiverse_effects %>%
   facet_wrap(~group) 
 ```
 
-##### Effect of Task Type Across Unprdictability
+##### Effect of Task Type Across Unpredictability
 
 ```{r fig.showtext = T, fig.height=3.5}
 # Plot the interactions

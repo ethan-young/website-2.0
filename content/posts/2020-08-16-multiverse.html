@@ -3,7 +3,7 @@ title: A Multiverse Analysis of Interaction Effects
 description: Running a multiverse moderation analysis over arbitrary data decisions and plotting the results
 author: ''
 date: '2020-08-16'
-updated: "December 16, 2020"
+updated: "March 24, 2021"
 tocbot: true
 slug: multiverse
 categories: []
@@ -30,7 +30,7 @@ tags:
 <li>equally defensible/have reasonable justifications</li>
 </ol>
 <p>For example, whether to remove outliers at +/- 3 or 2.5 standard deviations could be arbitrary. Neither cutoff is theoretically informed and both are equally defensible.</p>
-<p>In contrast, non-arbitrary choices are expected to affect results, either for theoretical or empirical reasons. For example, theory might suggest controlling for a confound is crucial for interpreting results. Empirically, controlling for a confound may aid interpretation because such a confound is known to correlate with the outcome of interest and should be accounting for in each our analysis.</p>
+<p>In contrast, non-arbitrary choices are expected to affect results, either for theoretical or empirical reasons. For example, theory might suggest controlling for a confound is crucial for interpreting results. Empirically, controlling for a confound may aid interpretation because such a confound is known to correlate with the outcome of interest and should be accounted for in our analysis.</p>
 <p>Multiverse analysis should be ran over all possible <strong>arbitrary</strong> decisions. This is important because the multiverse can quickly become unnecessarily large and difficult to interpret. Ideally, the multiverse will comprise all datasets that, by themselves, would make sense to analyze and interpret individually.</p>
 </div>
 <div id="setup" class="section level4">
@@ -706,7 +706,7 @@ mulitverse_sample_size %&gt;%
 <div id="analyze-the-multiverse" class="section level3">
 <h3>Analyze the Multiverse</h3>
 <p>I’ve generated our multiverse of datasets, now I need to analyze it. My strategy is to loop over my <code>multiverse_data</code> object. First, I extract the decisions that produced the data to know what we should do with <code>ex_csd</code> (i.e., create residualized scores, include it as a covariate, or do nothing).</p>
-<p>Next, I restructure the data into long format so I can run a mixed model with random intercepts to look at the main effect of <code>iv_unp</code> (between subjects), main effect of <code>task_type</code> (standard or ecological version, within subjects), and their interaction.</p>
+<p>Next, I restructure the data into long format so I can run a mixed model with random intercepts to look at the main effect of <code>iv_unp</code> (between-subjects), main effect of <code>task_type</code> (standard or ecological version, within-subjects), and their interaction.</p>
 <p>After running the mixed model, I also do a simple slopes test to evaluate (in the context of an interaction) the simple effects of high versus low unpredictability and standard versus ecological versions of the test.</p>
 <p>At the end of each iteration, I compile another list with the following components:</p>
 <ul>
@@ -1000,8 +1000,8 @@ multiverse_effects %&gt;%
   facet_wrap(~group) </code></pre>
 <p><img src="/posts/2020-08-16-multiverse_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
 </div>
-<div id="effect-of-task-type-across-unprdictability" class="section level5">
-<h5>Effect of Task Type Across Unprdictability</h5>
+<div id="effect-of-task-type-across-unpredictability" class="section level5">
+<h5>Effect of Task Type Across Unpredictability</h5>
 <pre class="r"><code># Plot the interactions
 multiverse_effects %&gt;% 
   mutate(
