@@ -3,8 +3,8 @@
     <div class="uk-navbar-center">
       <ul class = "uk-navbar-nav">
         <li>
-          <a href="/" class="uk-logo ">
-            <span class="uk-icon uk-button-text uk-text-large uk-text-bold">  &middot;  {{.Site.Title}}  &middot; 
+          <a href="/">
+            <span class="uk-icon uk-button-text uk-text-large uk-text-bold">&#8212; E &middot; S &middot; Y &#8212;</span>
           </a> 
         </li>
       </ul>
@@ -22,7 +22,7 @@
                 {{ range where .Site.Menus.main "Weight" "in" (seq 1 10) }}
                 <li><a href = "{{ .URL }}"><span >{{ .Name }}</span></a></li>
                 {{ end }}
-                <li class="uk-nav-header"><a href="/">Research</a></li>
+                <li class="uk-nav-header"><a>Research</a></li>
                 <li class = "uk-nav-divider"></li>
                 {{ range where .Site.Menus.main "Weight" "in" (seq 11 20) }}
                 <li><a href = "{{ .URL }}"><span >{{ .Name }}</span></a></li>
