@@ -17,7 +17,7 @@
   .tm-sidebar-left {
       position: absolute;
       top: 0;
-      right: calc(100% - 25px);
+      right: calc(100% - 75px);
       width: 200px;
   }
   
@@ -72,6 +72,15 @@
   </div>
 </div>
 
+<div class="uk-hidden@l">
+  <div id = "js-toc" class = "uk-align-center" style="width: 200px;">
+    <ul id = 'ui-toc2' class = "uk-nav uk-nav-default uk-nav-parent-icon tm-nav uk-padding-top" uk-scrollspy-nav = "closest: li; scroll: true; offset: 10;">
+
+    </ul>
+  </div>
+  <br>
+</div>
+
 <script type="text/javascript">
   $(document).ready(function(){
     var item_index = 0;
@@ -90,6 +99,18 @@
     
     $("article h4").addClass("uk-text-bold");
     $("article h5").addClass("uk-text-bold uk-text-italic");
+  });
+</script>
+
+<script type="text/javascript">
+  $(document).ready(function(){
+    var item_index = 0;
+    $("#ui-toc2").append("<li class='uk-nav-header uk-text-center'>Contents</li>");
+    $("article > div > h3").each(function(){
+      var content  = $(this).html()
+      $("#ui-toc2").append("<li>"+ content + "</li>")
+      item_index += 1;
+    });
   });
 </script>
 

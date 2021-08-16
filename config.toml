@@ -1,6 +1,7 @@
-baseURL = "/"
+baseURL = "https://www.ethan-young.com/"
 languageCode = "en-us"
 title = "ESY"
+ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_cache$", "\\.knit\\.md$", "\\.utf8\\.md$"]
 
 [Params]
   RSSLink = "/index.xml"
@@ -12,71 +13,56 @@ title = "ESY"
   research_gate = "https://www.researchgate.net/profile/Ethan_Young3"
   university = "Utrecht University"
   city = "Utrecht"
-  country = "The Netherlands"
+  country = "the Netherlands"
   job = "Postdoctoral Researcher"
   degree = "Ph.D."
 
-[[menu.main]]
-    name = "Work"
-    weight = 10
-[[menu.main]]
-    name = "Sandbox"
-    weight = 20
-
-[[menu.main]]
-    name = "Publications"
-    url = "/publications/"
-    parent = "Work"
-[[menu.main]]
-    name = "Posts"
-    url = "/posts/"
-    parent = "Sandbox"
-[[menu.main]]
-    name = "Portfolio"
-    url = "/portfolio/"
-    parent = "Work"
-[[menu.main]]
-    name = "CV"
-    url = "/cv/"
-    parent = "Work"
-[[menu.main]]
-    name = "Learning"
-    url = "/resources/"
-    parent = "Sandbox"
+# Top Menu
+# Ethan 
 [[menu.main]]
     name = "About"
     url = "/about/"
-    weight = 30
-
-#[[menu.main]]
-#    name = "Publications"
-#    weight = 10
-#    url = "/publications/"
-#[[menu.main]]
-#    name = "Posts"
-#    weight = 20
-#    url = "/posts/"
-#[[menu.main]]
-#    name = "Portfolio"
-#    weight = 30
-#    url = "/portfolio/"
-#[[menu.main]]
-#    name = "CV"
-#    weight = 40
-#    url = "/cv/"
-#[[menu.main]]
-#    name = "Resources"
-#    weight = 50
-#    url = "/resources/"
-#[[menu.main]]
-#    name = "About"
-#    weight = 60
-#    url = "/about/"
+    weight = 1
+[[menu.main]]
+    name = "CV"
+    url = "/cv/"
+    weight = 2
+[[menu.main]]
+    name = "Resources"
+    url = "/resources/"
+    weight = 3
+## Academic Research
+[[menu.main]]
+    name = "Publications"
+    url = "/publications/"
+    weight = 11
+[[menu.main]]
+    name = "Code"
+    url = "/code/"
+    weight = 12
+## Skills Portfolio
+[[menu.main]]
+    name = "Portfolio"
+    url = "/portfolio/"
+    weight = 22
+[[menu.main]]
+    name = "Visualizations"
+    url = "/portfolio/visualizations/"
+    weight = 24
+[[menu.main]]
+    name = "Shiny Applications"
+    url = "/portfolio/shiny-apps/"
+    weight = 25
+[[menu.main]]
+    name = "Behavioral Tasks"
+    url = "/portfolio/tasks/"
+    weight = 26
 
 #[[menu.main]]
 #    name = "Archive"
-#    weight = 50
+#    weight = 9
 #    url = "/Archive/"
+#    parent = "Code"
 
 [taxonomies]
   tag = "tags"
@@ -84,4 +70,7 @@ title = "ESY"
 [outputs]
   home = [ "HTML", "RSS", "JSON"]
 
-ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$", "\\.knit\\.md$", "\\.utf8\\.md$", "^cv-pdf\\.Rmd$"]
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true

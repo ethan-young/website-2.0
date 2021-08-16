@@ -95,7 +95,7 @@ HTML(
       HTML(
         "<li>
           <div uk-filter='target: .js-filter'>
-            <div class='uk-flex-center uk-grid-small uk-child-width-auto' uk-grid>
+            <div class='uk-flex-center uk-grid-small uk-child-width-auto uk-visible@s' uk-grid>
               <div>
                 <ul class='uk-subnav uk-subnav-pill' uk-margin>
                     <li class='uk-active' uk-filter-control><a href='#'>All</a></li>
@@ -128,7 +128,7 @@ HTML(
         "</ul>
               </div>
             </div>",
-        "<ul class='js-filter uk-grid-match uk-child-width-1-2@m' uk-grid>",
+        "<ul class='js-filter uk-grid-match uk-child-width-1-1@m' uk-grid>",
         ref_data %>%
           mutate(year_arrange = ifelse(year == "in-progress","0",year)) %>% 
           arrange(pub_type,desc(year_arrange),count_auth) %>% 
@@ -136,7 +136,7 @@ HTML(
             .open = "{", .close = "}",.na = "",
             "<li data-type = '{pub_sub_type}' data-year = '{str_replace(year,'-',' ')}' data-author = '{first_author}'>",
             "<div class='uk-card uk-card-hover uk-border-rounded uk-card-body'>",
-            "<div class='uk-card-badge uk-label uk-text-small uk-padding-small uk-padding-remove-vertical uk-border-rounded' uk-tooltip='title: {journal}; pos: top'>{abbr}</div>",
+            "<div class='uk-card-badge uk-label uk-text-small uk-padding-small uk-padding-remove-vertical uk-border-rounded uk-visible@s' uk-tooltip='title: {journal}; pos: top'>{abbr}</div>",
             "<h5 class='uk-margin-remove-bottom uk-text-bold'>{citation_intext} ({str_replace(year,'-',' ')})</h5>",
             "<p class='uk-text-meta uk-text-truncate uk-margin-remove-top'>{authors}</p>",
             "<p>{title}</p>",

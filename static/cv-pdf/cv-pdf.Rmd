@@ -29,30 +29,30 @@ header-includes:
 \renewcommand{\headrulewidth}{0pt}
 
 \begin{center}
-  \Huge{\textbf{\textit{Ethan S. Young}}} \\
+\Huge{\textbf{\textit{Ethan S. Young}}} \\
 \end{center}
 
 \vspace{2ex}
 
 \begin{minipage}{5cm}
-  \begin{center}
-    Postdoctoral Researcher \\
-    Department of Pyschology, Utrecht University \\
-    Utrecht, The Netherlands \\
-  \end{center}
+\begin{center}
+Postdoctoral Researcher \\
+Department of Pyschology, Utrecht University \\
+Utrecht, The Netherlands \\
+\end{center}
 \end{minipage}
 \hfill
 \begin{minipage}{5cm}
-  \begin{tikzpicture}[baseline=(ola.center),inner sep=0pt]
-    \clip (0,0)  circle (2.25cm) node (ola) {\includegraphics[width=4.5cm]{pic1.jpeg}};
-  \end{tikzpicture}
+\begin{tikzpicture}[baseline=(ola.center),inner sep=0pt]
+\clip (0,0)  circle (2.25cm) node (ola) {\includegraphics[width=4.5cm]{pic1.jpeg}};
+\end{tikzpicture}
 \end{minipage}
 \hfill
 \begin{minipage}{5cm}
-  \faPhone{} +31 6 82583068  \\
-  \faEnvelope{} \href{mailto:young.ethan.scott@gmail.com}{young.ethan.scott@gmail.com}\\
-  \faHome{} \href{www.ethan-young.com}{ethan-young.com} \\
-  \faGithub{} \href{https://github.com/ethan-young}{github}\\
+\faPhone{} +31 6 82583068  \\
+\faEnvelope{} \href{mailto:young.ethan.scott@gmail.com}{young.ethan.scott@gmail.com}\\
+\faHome{} \href{www.ethan-young.com}{ethan-young.com} \\
+\faGithub{} \href{https://github.com/ethan-young}{github}\\
 \end{minipage}
 
 ```{r setup, include=FALSE}
@@ -73,6 +73,14 @@ positions <- read_excel(cv_path, sheet = 2, col_types = c("text")) %>% arrange(d
 education <- read_excel(cv_path, sheet = 3, col_types = c("text")) %>% arrange(desc(end))
 awards    <- read_excel(cv_path, sheet = 4, col_types = c("text")) %>% arrange(desc(end))
 teaching  <- read_excel(cv_path, sheet = 5, col_types = c("text")) %>% arrange(desc(year))
+reviews   <- 
+  read_excel(cv_path, sheet = 6, col_types = c("text")) %>% 
+  arrange(journal,desc(year)) %>% 
+  group_by(journal) %>% 
+  mutate(
+    count = 1:n(),
+    journal_group = ifelse(count == 1, journal, "")
+  )
 ```
 
 \vspace{1ex}
@@ -182,15 +190,7 @@ cat(
 ## *Peer-Reviewed Papers*
 
 ```{r, results='asis'}
-journals <- c("Journal of Personality and Social Psychology",
-              "Self and Identity",
-              "Psychological Science",
-              "Evolutionary Behavioral Sciences",
-              "Developmental Psychology",
-              "Attachment and Human Development",
-              "Development and Psychopathology",
-              "Evolution and Human Behavior",
-              "Trends in Cognitive Sciences")
+journals <- readxl::read_excel(cv_path, sheet = 1) %>% pull(journal) %>% unique()
 
 walk(journals, function(x){
   pubs <<- pubs %>% 
@@ -285,10 +285,11 @@ in_progress <- pubs %>%
   group_by(pub_type) %>%
   mutate(count_year = 1:n(),
          count_auth = ifelse(str_detect(citation,"^\\\\textbf\\{Young, E. S."), count*-1, count_year),
-         pub_group = ifelse(count_auth == min(count_auth),pub_type,"") %>% str_replace("-"," ")) %>% 
+         pub_group  = ifelse(count_auth == min(count_auth),pub_type,"") %>% str_replace("-"," "),
+         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
   arrange(pub_type,count_auth) %>% 
   ungroup() %>% 
-  select(year,pub_group,citation)
+  select(year_group, year,pub_group,citation)
 
 cat(
   "\\noindent \\begin{longtable}{p{2.25cm}p{5.5in}}",
@@ -298,7 +299,7 @@ cat(
            last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>%
     glue_data(
       .open = "<",.close = ">",.na = "",
-      "<str_replace(year,'-',' ')> & \\hangindent=0.25cm <citation> \\\\ ",
+      "<str_replace(year_group,'-',' ')> & \\hangindent=0.25cm <citation> \\\\ ",
       "<last_row>"
     ),
   "\\end{longtable}",
@@ -467,17 +468,28 @@ cat(
 
 \vspace{1ex}
 
-# **Ad Hoc Reviewing**
+# **Peer Reviews**
 
 \vspace{1ex}
 \begin{color}{mygray}\hrule\end{color}
 \vspace{1ex}
 
-- *Child Development*
-- *Evolution and Human Behavior*
-- *Evolutionary Psychology*
-- *Personality and Social Psychology Bulletin*
-- *Journal of Child Psychology and Psychiatry*
+```{r results='asis'}
+reviews %>% 
+  split(.$journal) %>% 
+  iwalk(function(x, y){
+    cat(
+      "_**", y,"**_\n\n",
+      glue_data(
+        x, 
+        "- {lubridate::month(as.numeric(month), label = T)}. {year}, ",
+        "editor: {editor}, ",
+        "{ifelse(n_revisions > 1, paste(n_revisions, 'revisions'), paste(n_revisions, 'revision'))}"
+      ) %>% paste(collapse = "\n"),
+      sep = "", collapse = "\n\n"
+    )
+  })
+```
 
 \vspace{1ex}
 

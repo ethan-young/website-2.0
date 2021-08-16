@@ -1,77 +1,54 @@
-<div class = "uk-visible@s">
-  <nav class="uk-dark uk-background-default uk-margin-remove " uk-navbar="mode: click; dropbar: true; dropbar-mode: push; ">
-    <div class="uk-navbar-left">
-      <a href="/" class="uk-navbar-item uk-logo"><span class="uk-icon uk-margin-small-right uk-button-text">{{.Site.Title}}</a> 
-    </div>
-    <div class = "uk-navbar-center">
+<div class = "uk-navbar-container">
+  <nav class="uk-background-default" uk-navbar>
+    <div class="uk-navbar-center">
       <ul class = "uk-navbar-nav">
-       {{ $currentPage := . }}
-       {{ range .Site.Menus.main }}
-       <li>
-         <a href = "{{ .URL }}">
-           <span class = "uk-button-text uk-padding-remove-horizontal">{{ .Name }}</span>
-         </a>
-         {{ if .HasChildren }}
-         <div class = "uk-navbar-dropdown uk-padding-remove-top uk-margin-remove" uk-dropdown="pos: bottom-left">
-           <ul class = "uk-text-small uk-padding-remove uk-margin-remove" >
-            {{ range .Children }}
-            <li>
-              <a class = "uk-link-reset" href = "{{ .URL }}">
-               <span class = "uk-button-text uk-padding-remove-horizontal">{{ .Name }}</span>
-              </a>
-            </li>
-            {{ end }}
-           </ul>
-         </div>
-         {{ end }}
+        <li>
+          <a href="/" class="uk-logo ">
+            <span class="uk-icon uk-button-text uk-text-large uk-text-bold">  &middot;  {{.Site.Title}}  &middot; 
+          </a> 
         </li>
-       {{ end }}
+      </ul>
+    </div>
+    <div class="uk-navbar-left">
+      <ul class = "uk-navbar-nav">
+        <li>
+          <a class="uk-button uk-link" type="button" uk-toggle="target: #offcanvas-nav"><span uk-navbar-toggle-icon></span></a>
+          <div id="offcanvas-nav" uk-offcanvas="overlay: false; mode: slide">
+            <div class="uk-offcanvas-bar">
+              <button class="uk-offcanvas-close" type="button" uk-close></button>
+              <ul class="uk-nav uk-nav-default">
+                <li class="uk-nav-header"><a href="/">Ethan</a></li>
+                <li class = "uk-nav-divider"></li>
+                {{ range where .Site.Menus.main "Weight" "in" (seq 1 10) }}
+                <li><a href = "{{ .URL }}"><span >{{ .Name }}</span></a></li>
+                {{ end }}
+                <li class="uk-nav-header"><a href="/">Research</a></li>
+                <li class = "uk-nav-divider"></li>
+                {{ range where .Site.Menus.main "Weight" "in" (seq 11 20) }}
+                <li><a href = "{{ .URL }}"><span >{{ .Name }}</span></a></li>
+                {{ end }}
+                <li class="uk-nav-header"><a href = "/portfolio/">Skills Portfolio</a></li>
+                <li class = "uk-nav-divider">
+                {{ range where .Site.Menus.main "Weight" "in" (seq 23 30) }}
+                <li><a href = "{{ .URL }}"><span >{{ .Name }}</span></a></li>
+                {{ end }}
+              </ul>
+            </div>
+          </div>
+        </li>
       </ul>
     </div>
     <div class = "uk-navbar-right uk-margin-small-right">
-      <div class = "uk-visible@l">
+      <div class = "uk-visible@l uk-margin-right">
         <form id = "search-by-container" class="uk-search uk-search-default uk-width-expand">
           <a href="" class="uk-search-icon-flip" uk-search-icon></a>
           <input id = "search-by" class="uk-search-input" type="search" placeholder="Search...">
         </form>
       </div>
-    </div>
-  </nav>
-  <div class="uk-navbar-dropbar"></div>
-  <hr class = 'uk-margin-remove'>
-</div>
-<div class="uk-position-relative uk-hidden@s">
-  <nav class="uk-dark" uk-navbar="dropbar: true; dropbar-mode: push; mode: click;">
-    <div class="uk-navbar-left">
-      <ul class="uk-navbar-nav">
-        <li>
-          <a href="#" uk-navbar-toggle-icon></a>
-          <div class="uk-navbar-dropdown">
-            <ul class="uk-nav uk-navbar-dropdown-nav">
-              <li>
-                 <a href="/"><span class="uk-padding-remove-horizontal">Home</a> 
-              </li>
-              <hr class = "uk-padding-remove">
-              {{ $currentPage := . }}
-              {{ range .Site.Menus.main }}
-              <li><a class = {{ if eq .URL "" }} "uk-link-reset" {{else}} "" {{end}} href = "{{ .URL}}">{{ .Name }}</a>
-              </li>
-                {{ if .HasChildren }}
-                   {{ range .Children }}
-                   <li>
-                     <a href = "{{ .URL }}">
-                      <span >{{ .Name }}</span>
-                     </a>
-                   </li>
-                   {{ end }}
-                {{ end }}
-               </li>
-              {{ end }}
-            </ul>
-          </div>
-        </li>
+      <ul  class = "uk-navbar-nav">
+        <li><a href="{{ .Site.Params.github }}" uk-icon="icon: github"></a></li>
       </ul>
     </div>
   </nav>
-  <div class="uk-navbar-dropbar"></div>
+  <hr class = "uk-margin-remove">
 </div>

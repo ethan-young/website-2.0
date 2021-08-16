@@ -22,7 +22,8 @@ pubs <-
   mutate(count_year = 1:n(),
          count_auth = ifelse(str_detect(citation,"^<b>Young, E. S."), count*-1, count_year),
          border     = ifelse(count_year == max(count_auth) | n()==1,"solid","none"),
-         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
+         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," "),
+         year       = str_replace(year, "-", " ")) %>% 
   arrange(desc(year),count_auth) %>% 
   ungroup()
 ```
@@ -50,7 +51,7 @@ tags$div(
         "<div>",
           "<div class='uk-card uk-card-hover uk-border-rounded uk-width-1-1@m'>",
             "<div class='uk-card-body'>",
-              "<div class='uk-card-badge uk-label uk-padding-small uk-padding-remove-vertical uk-border-rounded' uk-tooltip='title: [journal]; pos: top'>[abbr]</div>",
+              "<div class='uk-card-badge uk-label uk-padding-small uk-padding-remove-vertical uk-border-rounded uk-visible@s' uk-tooltip='title: [journal]; pos: top'>[abbr]</div>",
               "<h3 class='uk-card-title uk-margin-remove-bottom uk-text-bold'>[citation_intext] ([str_replace(year,'-', ' ')])</h3>",
               "<p class='uk-text-meta uk-margin-remove-top'>[authors]</p>",
               "<p>[title]</p>",
@@ -94,7 +95,7 @@ tags$div(
          "<div>",
           "<div class='uk-card uk-card-hover uk-border-rounded uk-width-1-1@m'>",
             "<div class='uk-card-body'>",
-              "<div class='uk-card-badge uk-label uk-padding-small uk-padding-remove-vertical uk-border-rounded' uk-tooltip='title: [journal]; pos: top'>[abbr]</div>",
+              "<div class='uk-card-badge uk-label uk-padding-small uk-padding-remove-vertical uk-border-rounded uk-visible@s' uk-tooltip='title: [journal]; pos: top'>[abbr]</div>",
               "<h3 class='uk-card-title uk-margin-remove-bottom uk-text-bold'>[citation_intext] ([year])</h3>",
               "<p class='uk-text-meta uk-margin-remove-top'>[authors]</p>",
               "<p>[title]</p>",
@@ -115,4 +116,4 @@ tags$div(
   ),
   HTML("</div>")
 )
-```
+``` 

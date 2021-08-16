@@ -1,5 +1,6 @@
 ---
 title: Curriculum Vitae
+description: Ethan S. Young's CV
 tocbot: true
 ---
 
@@ -10,28 +11,31 @@ library(glue)
 library(htmltools)
 library(readxl)
 
-# Publications
-journals <- c("Journal of Personality and Social Psychology",
-              "Self and Identity",
-              "Psychological Science",
-              "Evolutionary Behavioral Sciences",
-              "Developmental Psychology",
-              "Attachment and Human Development",
-              "Trends in Cognitive Sciences",
-              "Development and Psychopathology",
-              "Evolution and Human Behavior")
-
 # Read cv data
 cv_path <- "../../data/cv-data.xlsx"
+
+# Publications
+journals <- readxl::read_excel(cv_path, sheet = 1) %>% pull(journal) %>% unique()
+
+# Publications
 pubs <- readxl::read_excel(cv_path, sheet = 1) %>% 
   mutate(
     citation = str_replace(citation,"Young, E. S.","<span class = 'uk-text-bold uk-text-emphasis'>Young, E. S.</span>"),
-    citation = str_replace(citation, paste0("(",journals,")",collapse="|"), "<i>\\1\\2\\3\\4\\5\\6\\7\\8\\9</i>")
+    citation = str_replace_all(citation, paste0("(",journals,")",collapse="|"), paste0("<i>", paste0("\\", seq_along(journals), collapse=""),"</i>"))
   )
 positions <- read_excel(cv_path, sheet = 2, col_types = c("text")) %>% arrange(desc(end))
 education <- read_excel(cv_path, sheet = 3, col_types = c("text")) %>% arrange(desc(end))
 awards    <- read_excel(cv_path, sheet = 4, col_types = c("text")) %>% arrange(desc(end))
 teaching  <- read_excel(cv_path, sheet = 5, col_types = c("text")) %>% arrange(desc(year))
+reviews   <- 
+  read_excel(cv_path, sheet = 6, col_types = c("text")) %>% 
+  arrange(journal,desc(year)) %>% 
+  group_by(journal) %>% 
+  mutate(
+    count = 1:n(),
+    journal_group = ifelse(count == 1, journal, "")
+  )
+
 
 # Journal articles
 articles <- pubs %>% 
@@ -49,7 +53,6 @@ articles <- pubs %>%
          year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
   arrange(desc(year),count_auth) %>% 
   ungroup()
-
 ```
 
 ```{r edu,echo=F,message=F,warning=F}
@@ -381,6 +384,34 @@ tags$div(
           paste(collapse = "")
       )
     )
+  )
+)
+```
+
+```{r reviewing, echo=F, message=F, warning=F}
+tags$div(
+  class = "uk-section uk-section-default uk-section-small uk-padding-remove-top",
+  tags$h3(class = 'uk-heading-divider uk-text-bold',"Peer Reviews"),
+  tags$div(
+    class = "uk-container-xsmall uk-padding uk-padding-remove-vertical",
+    reviews %>% 
+      split(.$journal) %>% 
+      imap(function(x, y){
+        tags$div(
+          tags$span(class = "uk-text-bold uk-text-italic", y),
+          tags$ul(
+            HTML(
+              glue_data(
+                x, 
+                "<li>{lubridate::month(as.numeric(month), label = T)}. {year}, ",
+                "editor: {editor}, ",
+                "{ifelse(n_revisions > 1, paste(n_revisions, 'revisions'), paste(n_revisions, 'revision'))}</li>"
+              ) %>% 
+                paste(collapse = "")
+            )
+          )
+        )
+      })
   )
 )
 ```

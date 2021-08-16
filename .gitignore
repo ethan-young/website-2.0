@@ -4,10 +4,12 @@
 .Rhistory
 .RData
 .Ruserdata
-public/
-blogdown
+/public/
+/blogdown
+/resources/
 .DS_Store
 0-uikit-source/
 scripts/
 dashboards/
 data/
+Thumbs.db

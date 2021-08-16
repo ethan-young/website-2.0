@@ -20,7 +20,8 @@
   <h1 class = 'uk-heading-medium uk-padding uk-text-center uk-position-relative'>{{ .Params.title }}</h1>
   <h4 class = "uk-text-center uk-text-italic uk-position-relative uk-padding uk-padding-remove-bottom uk-margin-remove-top">{{ .Params.description }}</h4>
 </div>
-  <article id = "my-content" class = 'uk-container uk-position-relative uk-padding-large uk-padding-remove-top'>
+<div class = "uk-margin-auto" style = "max-width: 1000px;">
+  <article id = "my-content" class = 'uk-container uk-position-relative  uk-margin-remove-vertical uk-padding-remove-top'>
   {{ partial "toc" . }}
   {{.Content}}
   </article>
