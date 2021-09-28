@@ -11,7 +11,7 @@ library(glue)
 library(htmltools)
 library(readxl)
 
-# Read cv data
+# Read CV data
 cv_path <- "../../data/cv-data.xlsx"
 
 # Publications
@@ -68,7 +68,7 @@ tags$div(
           mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
           glue_data(
             "<tr>",
-            "<td class = 'uk-width-small uk-text-left'>",
+            "<td class = 'uk-text-left' style = 'width: 175px;'>",
             "<span class = 'uk-text-bold uk-margin-left''>{end}</span>",
             "</td>",
             "<td>",
@@ -97,7 +97,7 @@ tags$div(
           mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
           glue_data(
             "<tr>",
-            "<td class = 'uk-width-small uk-text-left'>",
+            "<td class = 'uk-text-left' style = 'width: 175px;'>",
             "<span class = 'uk-text-bold uk-margin-left'>{start}-{end}</span>",
             "</td>",
             "<td>",
@@ -128,7 +128,7 @@ tags$div(
           mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
           glue_data(
             "<tr>",
-            "<td class = 'uk-width-small uk-text-left'>",
+            "<td class = 'uk-text-left' style = 'width: 175px;'>",
             "<span class = 'uk-text-bold uk-margin-left'>{ifelse(is.na(start),'',paste0(start,'-'))}{end}</span>",
             "</td>",
             "<td>",
@@ -148,7 +148,7 @@ tags$div(
           mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
           glue_data(
             "<tr>",
-            "<td class = 'uk-width-small uk-text-left'>",
+            "<td class = 'uk-text-left' style = 'width: 175px;'>",
             "<span class = 'uk-text-bold uk-margin-left''>{ifelse(is.na(start),'',paste0(start,'-'))}{end}</span>",
             "</td>",
             "<td>",
@@ -174,11 +174,11 @@ tags$div(
       class = "uk-table uk-table-justify uk-table-small uk-margin uk-margin-auto",
       HTML(
         articles %>% 
-          filter(pub_type=="journal", ! year %in% c('under-review','in-progress')) %>% 
+          filter(pub_type=="journal", in_progress == 0) %>% 
           mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
           glue_data(
             "<tr>",
-            "<td class = 'uk-width-small uk-text-left'>",
+            "<td class = 'uk-text-left' style = 'width: 175px;'>",
             "<span class = 'uk-text-bold uk-margin-left'>{year_group}</span>",
             "</td>",
             "<td style = 'padding-left: 32px;'>",
@@ -202,7 +202,7 @@ tags$div(
           mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
           glue_data(
             "<tr>",
-            "<td class = 'uk-width-small uk-text-left'>",
+            "<td class = 'uk-text-left' style = 'width: 175px;'>",
             "<span class = 'uk-text-bold uk-margin-left'>{year_group}</span>",
             "</td>",
             "<td style = 'padding-left: 32px;'>",
@@ -226,7 +226,7 @@ tags$div(
           mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
           glue_data(
             "<tr>",
-            "<td class = 'uk-width-small uk-text-left'>",
+            "<td class = 'uk-text-left' style = 'width: 175px;'>",
             "<span class = 'uk-text-bold uk-margin-left'>{year_group}</span>",
             "</td>",
             "<td style = 'padding-left: 32px;'>",
@@ -262,13 +262,13 @@ tags$div(
           mutate(count_year = 1:n(),
                  count_auth = ifelse(str_detect(citation,"^<b>Young, E. S."), count*-1, count_year),
                  border     = ifelse(count_year == max(count_auth) | n()==1,"solid","none"),
-                 year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
-          arrange(desc(year),count_auth) %>% 
+                 year_group = ifelse(month == max(month),year,"") %>% str_replace("-"," ")) %>% 
+          arrange(desc(year),desc(month),count_auth) %>% 
           ungroup() %>% 
           mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
           glue_data(
             "<tr>",
-            "<td class = 'uk-width-small uk-text-left'>",
+            "<td class = 'uk-text-left' style = 'width: 175px;'>",
             "<span class = 'uk-text-bold uk-margin-left'>{year_group}</span>",
             "</td>",
             "<td style = 'padding-left: 32px;'>",
@@ -299,7 +299,7 @@ tags$div(
           mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
           glue_data(
             "<tr>",
-            "<td class = 'uk-width-small uk-text-left'>",
+            "<td class = 'uk-text-left' style = 'width: 175px;'>",
             "<span class = 'uk-text-bold uk-margin-left'>{year_group}</span>",
             "</td>",
             "<td style = 'padding-left: 32px;'>",
@@ -333,7 +333,7 @@ tags$div(
           mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
           glue_data(
             "<tr>",
-            "<td class = 'uk-width-small uk-text-left'>",
+            "<td class = 'uk-text-left' style = 'width: 175px;'>",
             "<span class = 'uk-text-bold uk-margin-left'>{semester} {year}</span>",
             "</td>",
             "<td>",
@@ -353,7 +353,7 @@ tags$div(
           mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
           glue_data(
             "<tr>",
-            "<td class = 'uk-width-small uk-text-left'>",
+            "<td class = 'uk-text-left' style = 'width: 175px;'>",
             "<span class = 'uk-text-bold uk-margin-left'>{semester} {year}</span>",
             "</td>",
             "<td>",
@@ -373,7 +373,7 @@ tags$div(
           mutate(last_row = ifelse(row_number()== max(row_number()), "none","solid")) %>% 
           glue_data(
             "<tr>",
-            "<td class = 'uk-width-small uk-text-left'>",
+            "<td class = 'uk-text-left' style = 'width: 175px;'>",
             "<span class = 'uk-text-bold uk-margin-left'>{semester} {year}</span>",
             "</td>",
             "<td>",

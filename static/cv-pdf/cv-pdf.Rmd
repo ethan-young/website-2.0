@@ -93,7 +93,7 @@ reviews   <-
 
 ```{r, results='asis'}
 cat(
-  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  "\\begin{longtable}{p{1.1in}p{5in}}",
   education %>% 
     arrange(desc(end)) %>% 
     mutate_all(~str_replace_all(.,"&","\\\\&")) %>%
@@ -118,7 +118,7 @@ cat(
 
 ```{r, results='asis'}
 cat(
-  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  "\\begin{longtable}{p{1.1in}p{5in}}",
   positions %>% 
     mutate_all(~str_replace_all(.,"&","\\\\&")) %>% 
     mutate(last_row = ifelse(row_number()!= max(row_number()), "\\\\& \\\\","")) %>% 
@@ -144,7 +144,7 @@ cat(
 
 ```{r, results='asis'}
 cat(
-  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  "\\begin{longtable}{p{1.1in}p{5in}}",
   awards %>% 
     filter(type == "award") %>% 
     mutate_all(~str_replace_all(.,"&","\\\\&")) %>%
@@ -163,7 +163,7 @@ cat(
 
 ```{r, results='asis'}
 cat(
-  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  "\\begin{longtable}{p{1.1in}p{5in}}",
   awards %>% 
     filter(type == "fellowship") %>% 
     mutate_all(~str_replace_all(.,"&","\\\\&")) %>%
@@ -198,7 +198,7 @@ walk(journals, function(x){
 })
 
 articles <- pubs %>% 
-  filter(pub_type=="journal", ! year %in% c('under-review','in-progress')) %>% 
+  filter(pub_type=="journal", in_progress == 0) %>% 
   arrange(desc(year)) %>% 
   mutate(count = 1:n()) %>% 
   group_by(year) %>%
@@ -216,7 +216,7 @@ articles <- pubs %>%
   select(year_group,citation,download)
 
 cat(
-  "\\noindent \\begin{longtable}{p{2.25cm}p{5.5in}}",
+  "\\noindent \\begin{longtable}{p{1.1in}p{5in}}",
   articles %>%
     mutate(number = 1:n(),
            hline      = ifelse(lead(year_group)!="" & number<max(number),"\\hline  ",""),
@@ -227,7 +227,7 @@ cat(
            last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>% 
     glue_data(
       .open = "<",.close = ">",.na = "",
-      "<year_group> & \\hangindent=0.25cm <citation> \\newline <download> \\\\ ",
+      "<year_group> & \\hangindent=0.30cm <citation> \\newline <download> \\\\ ",
       "<last_row>"
     ),
   "\\end{longtable}",
@@ -257,7 +257,7 @@ chapters <- pubs %>%
   select(year_group,citation,download)
 
 cat(
-  "\\noindent \\begin{longtable}{p{2.25cm}p{5.5in}}",
+  "\\noindent \\begin{longtable}{p{1.1in}p{5in}}",
   chapters %>%
     mutate(number = 1:n(),
            hline      = ifelse(lead(year_group)!="" & number<max(number),"\\hline  ",""),
@@ -268,7 +268,7 @@ cat(
            last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>%
     glue_data(
       .open = "<",.close = ">",.na = "",
-      "<year_group> & \\hangindent=0.25cm <citation> \\newline <download> \\\\ ",
+      "<year_group> & \\hangindent=0.30cm <citation> \\newline <download> \\\\ ",
       "<last_row>"
     ),
   "\\end{longtable}",
@@ -286,20 +286,21 @@ in_progress <- pubs %>%
   mutate(count_year = 1:n(),
          count_auth = ifelse(str_detect(citation,"^\\\\textbf\\{Young, E. S."), count*-1, count_year),
          pub_group  = ifelse(count_auth == min(count_auth),pub_type,"") %>% str_replace("-"," "),
-         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
+         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," "),
+         year       = year %>% str_replace("&", "\\\\&")) %>% 
   arrange(pub_type,count_auth) %>% 
   ungroup() %>% 
   select(year_group, year,pub_group,citation)
 
 cat(
-  "\\noindent \\begin{longtable}{p{2.25cm}p{5.5in}}",
+  "\\noindent \\begin{longtable}{p{1.1in}p{5in}}",
   in_progress %>%
     mutate(number = 1:n(),
            citation   = str_replace_all(citation,"&","\\\\&"),
            last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>%
     glue_data(
       .open = "<",.close = ">",.na = "",
-      "<str_replace(year_group,'-',' ')> & \\hangindent=0.25cm <citation> \\\\ ",
+      "<str_replace(year,'-',' ')> & \\hangindent=0.30cm <citation> \\\\ ",
       "<last_row>"
     ),
   "\\end{longtable}",
@@ -326,8 +327,8 @@ presentations <- pubs %>%
   mutate(count_year = 1:n(),
          count_auth = ifelse(str_detect(citation,"^\\\\textbf\\{Young, E. S."), count*-1, count_year),
          border     = ifelse(count_year == max(count_auth) | n()==1,"solid","none"),
-         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," ")) %>% 
-  arrange(desc(year),count_auth) %>% 
+         year_group = ifelse(month == max(month),year,"") %>% str_replace("-"," ")) %>% 
+  arrange(desc(year),desc(month),count_auth) %>% 
   ungroup() %>% 
   mutate(
     border   = ifelse(count == last(count),"",border),
@@ -337,7 +338,7 @@ presentations <- pubs %>%
   select(year_group,citation,download)
 
 cat(
-  "\\noindent \\begin{longtable}{p{2.25cm}p{5.5in}}",
+  "\\noindent \\begin{longtable}{p{1.1in}p{5in}}",
   presentations %>%
     mutate(number = 1:n(),
            hline      = ifelse(lead(year_group)!="" & number<max(number),"\\hline  ",""),
@@ -348,7 +349,7 @@ cat(
            last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>% 
     glue_data(
       .open = "<",.close = ">",.na = "",
-      "<year_group> & \\hangindent=0.25cm <citation> \\newline <download> \\\\ ",
+      "<year_group> & \\hangindent=0.30cm <citation> \\newline <download> \\\\ ",
       "<last_row>"
     ),
   "\\end{longtable}",
@@ -379,7 +380,7 @@ posters <- pubs %>%
   select(year_group,citation,download)
 
 cat(
-  "\\noindent \\begin{longtable}{p{2.25cm}p{5.5in}}",
+  "\\noindent \\begin{longtable}{p{1.1in}p{5in}}",
   posters %>%
     mutate(number = 1:n(),
            hline      = ifelse(lead(year_group)!="" & number<max(number),"\\hline  ",""),
@@ -390,7 +391,7 @@ cat(
            last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>% 
     glue_data(
       .open = "<",.close = ">",.na = "",
-      " <year_group> &\\hangindent=0.25cm <citation> \\newline <download> \\\\ ",
+      " <year_group> &\\hangindent=0.30cm <citation> \\newline <download> \\\\ ",
       "<last_row>"
     ),
   "\\end{longtable}",
@@ -411,7 +412,7 @@ cat(
 
 ```{r, results='asis'}
 cat(
-  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  "\\begin{longtable}{p{1.1in}p{5in}}",
   teaching %>% 
     filter(position == "Instructor") %>% 
     mutate_all(~str_replace_all(.,"&","\\\\&")) %>% 
@@ -431,7 +432,7 @@ cat(
 
 ```{r, results='asis'}
 cat(
-  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  "\\begin{longtable}{p{1.1in}p{5in}}",
   teaching %>% 
     filter(position == "Section Leader") %>% 
     mutate_all(~str_replace_all(.,"&","\\\\&")) %>% 
@@ -451,7 +452,7 @@ cat(
 
 ```{r, results='asis'}
 cat(
-  "\\begin{longtable}{p{2.25cm}p{5.5in}}",
+  "\\begin{longtable}{p{1.1in}p{5in}}",
   teaching %>% 
     filter(position == "Teaching Assistant") %>% 
     mutate_all(~str_replace_all(.,"&","\\\\&")) %>% 
