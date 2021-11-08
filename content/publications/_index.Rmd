@@ -42,10 +42,16 @@ walk(1:nrow(articles), function(x){
     ungroup() %>% 
     filter(row_number()==x)
   
+  directory <- glue_data(
+    page_data,
+    .open = "{", .close = "}",.na = "",
+    "{pub_type}/{filename}"
+  )
+  
   path <- glue_data(
     page_data,
     .open = "{", .close = "}",.na = "",
-    "{pub_type}/{filename}.md"
+    "{pub_type}/{filename}/index.md"
   )
   
   title <- glue_data(
@@ -63,6 +69,7 @@ walk(1:nrow(articles), function(x){
     "---"
   )
   
+  dir.create(directory)
   file.create(path)
   
   writeLines(text = title, con = path)
