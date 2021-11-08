@@ -11,7 +11,7 @@ library(readxl)
 ```{r echo=F, message=F, warning=F, results='asis'}
 pubs <- 
   read_excel("../data/cv-data.xlsx", sheet = 1, col_types = c("text")) %>% 
-  mutate(filename = paste(str_remove(citation_intext,' .*'),year,abbr,sep='-') %>% str_remove('&') %>% str_to_lower()) %>%
+  mutate(filename = paste(str_remove(citation_intext,' .*'),year,abbr,sep='-') %>% str_remove_all('&') %>% str_replace('  | ','-') %>% str_to_lower()) %>%
   group_by(filename) %>%
   mutate(filename_num = 1:n()) %>%
   unite("filename",filename,filename_num,sep="-") %>%

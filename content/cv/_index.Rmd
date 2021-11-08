@@ -39,7 +39,7 @@ reviews   <-
 
 # Journal articles
 articles <- pubs %>% 
-  mutate(filename = paste(str_remove(citation_intext,' .*'),year,abbr,sep='-') %>% str_remove('&') %>% str_to_lower()) %>%
+  mutate(filename = paste(str_remove(citation_intext,' .*'),year,abbr,sep='-') %>% str_remove_all('&') %>% str_replace('  | ','-') %>% str_to_lower()) %>%
   group_by(filename) %>%
   mutate(filename_num = 1:n()) %>%
   unite("filename",filename,filename_num,sep="-") %>%
