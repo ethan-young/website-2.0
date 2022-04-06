@@ -190,7 +190,7 @@ cat(
 ## *Peer-Reviewed Papers*
 
 ```{r, results='asis'}
-journals <- readxl::read_excel(cv_path, sheet = 1) %>% pull(journal) %>% unique()
+journals <- readxl::read_excel(cv_path, sheet = 1) %>% pull(journal) %>% unique() %>% str_subset("NA", negate = T)
 
 walk(journals, function(x){
   pubs <<- pubs %>% 
@@ -199,6 +199,7 @@ walk(journals, function(x){
 
 articles <- pubs %>% 
   filter(pub_type=="journal", in_progress == 0) %>% 
+  mutate(year_arrange = ifelse(year == "in press","0",year)) %>% 
   arrange(desc(year)) %>% 
   mutate(count = 1:n()) %>% 
   group_by(year) %>%
@@ -279,33 +280,35 @@ cat(
 ## *In Progress*
 
 ```{r, results='asis'}
-in_progress <- pubs %>% 
-  filter(in_progress == 1) %>% 
-  mutate(count = 1:n()) %>% 
-  group_by(pub_type) %>%
-  mutate(count_year = 1:n(),
-         count_auth = ifelse(str_detect(citation,"^\\\\textbf\\{Young, E. S."), count*-1, count_year),
-         pub_group  = ifelse(count_auth == min(count_auth),pub_type,"") %>% str_replace("-"," "),
-         year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," "),
-         year       = year %>% str_replace("&", "\\\\&")) %>% 
-  arrange(pub_type,count_auth) %>% 
-  ungroup() %>% 
-  select(year_group, year,pub_group,citation)
-
-cat(
-  "\\noindent \\begin{longtable}{p{1.1in}p{5in}}",
-  in_progress %>%
-    mutate(number = 1:n(),
-           citation   = str_replace_all(citation,"&","\\\\&"),
-           last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>%
-    glue_data(
-      .open = "<",.close = ">",.na = "",
-      "<str_replace(year,'-',' ')> & \\hangindent=0.30cm <citation> \\\\ ",
-      "<last_row>"
-    ),
-  "\\end{longtable}",
-  sep = "\n"
-)
+if(pubs %>% filter(in_progress==1) %>% nrow() > 0 ){
+  in_progress <- pubs %>% 
+    filter(in_progress == 1) %>% 
+    mutate(count = 1:n()) %>% 
+    group_by(pub_type) %>%
+    mutate(count_year = 1:n(),
+           count_auth = ifelse(str_detect(citation,"^\\\\textbf\\{Young, E. S."), count*-1, count_year),
+           pub_group  = ifelse(count_auth == min(count_auth),pub_type,"") %>% str_replace("-"," "),
+           year_group = ifelse(count_auth == min(count_auth),year,"") %>% str_replace("-"," "),
+           year       = year %>% str_replace("&", "\\\\&")) %>% 
+    arrange(pub_type,count_auth) %>% 
+    ungroup() %>% 
+    select(year_group, year,pub_group,citation)
+  
+  cat(
+    "\\noindent \\begin{longtable}{p{1.1in}p{5in}}",
+    in_progress %>%
+      mutate(number = 1:n(),
+             citation   = str_replace_all(citation,"&","\\\\&"),
+             last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>%
+      glue_data(
+        .open = "<",.close = ">",.na = "",
+        "<str_replace(year,'-',' ')> & \\hangindent=0.30cm <citation> \\\\ ",
+        "<last_row>"
+      ),
+    "\\end{longtable}",
+    sep = "\n"
+  )
+}
 ```
 
 \vspace{1ex}

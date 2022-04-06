@@ -13,7 +13,9 @@ library(readxl)
 ```{r echo=F, message=F, warning=F, results='asis'}
 pubs <- read_excel("../../data/cv-data.xlsx", sheet = 1, col_types = c("text"))
 
-articles <- pubs %>% 
+articles <- 
+  pubs %>% 
+  filter(share == 1) %>% 
   mutate(filename = paste(str_remove(citation_intext,' .*'),year,abbr,sep='-') %>% str_remove_all('&') %>% str_replace('  | ','-') %>% str_to_lower()) %>%
   group_by(filename) %>%
   mutate(filename_num = 1:n()) %>%
@@ -31,7 +33,7 @@ articles <- pubs %>%
 
 walk(1:nrow(articles), function(x){
   page_data <- articles %>%
-    mutate(year_arrange = ifelse(year == "in-progress","0",year)) %>% 
+    mutate(year_arrange = ifelse(year == "in progress","0",year)) %>% 
     arrange(pub_type,desc(year_arrange),count_auth) %>% 
     group_by(pub_type) %>% 
     mutate(
@@ -100,8 +102,8 @@ HTML(
         filter(pub_type==x)
       
       HTML(
-        "<li>
-          <div uk-filter='target: .js-filter'>
+        ifelse(x == "journal", "<li class = 'uk-active'>","<li>"),
+          "<div uk-filter='target: .js-filter'>
             <div class='uk-flex-center uk-grid-small uk-child-width-auto uk-visible@s' uk-grid>
               <div>
                 <ul class='uk-subnav uk-subnav-pill' uk-margin>
