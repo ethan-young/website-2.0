@@ -49,7 +49,6 @@ Utrecht, The Netherlands \\
 \end{minipage}
 \hfill
 \begin{minipage}{5cm}
-\faPhone{} +31 6 82583068  \\
 \faEnvelope{} \href{mailto:young.ethan.scott@gmail.com}{young.ethan.scott@gmail.com}\\
 \faHome{} \href{www.ethan-young.com}{ethan-young.com} \\
 \faGithub{} \href{https://github.com/ethan-young}{github}\\
@@ -302,7 +301,7 @@ if(pubs %>% filter(in_progress==1) %>% nrow() > 0 ){
              last_row   = ifelse(row_number()!= max(row_number()), "\\\\& \\\\[-1.5em]","")) %>%
       glue_data(
         .open = "<",.close = ">",.na = "",
-        "<str_replace(year,'-',' ')> & \\hangindent=0.30cm <citation> \\\\ ",
+        "<str_replace(year_group,'-',' ')> & \\hangindent=0.30cm <citation> \\\\ ",
         "<last_row>"
       ),
     "\\end{longtable}",
